@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Home,
   Gamepad2,
@@ -68,11 +68,21 @@ import {
   Bell,
   Trash2,
   Edit3,
-  Gem
+  Gem,
+  Tv,
+  Camera,
+  MonitorPlay,
+  Volume2,
+  PhoneCall,
+  Minus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GomokuLobby, GomokuGameScreen, GomokuLoadingScreen } from './GomokuGame';
 import { ChessLobby, ChessGameScreen, ChessLoadingScreen } from './ChineseChess';
+import { AIHub, AIChatScreen, AIImageScreen, AIMusicScreen, AIVideoScreen } from './AI';
+import AILoadingScreen from './AI/AILoadingScreen';
+import { adminLogin, adminMe, adminLogout } from '../services/AuthService';
+import BuildingChatService from '../services/BuildingChatService';
 
 /**
  * SEER Mobile UI Mockups (High‑Fidelity)
@@ -389,6 +399,49 @@ const translations = {
     family: "Family",
     colleagues: "Colleagues",
     classmates: "Classmates",
+    // Live Streaming
+    liveStream: "Live Stream",
+    myLiveStream: "My Live Stream",
+    startLiveStream: "Start Live Stream",
+    goLive: "Go Live",
+    liveNow: "LIVE",
+    viewers: "viewers",
+    sendGift: "Send Gift",
+    liveTitle: "Live Title",
+    enterLiveTitle: "Enter your live stream title",
+    liveCategory: "Category",
+    selectCategory: "Select a category",
+    gaming: "Gaming",
+    chatting: "Chatting",
+    studying: "Studying",
+    music: "Music",
+    sports: "Sports",
+    other: "Other",
+    endLiveStream: "End Stream",
+    liveSettings: "Live Settings",
+    proOnlyFeature: "Pro Members Only",
+    upgradeToUnlock: "Upgrade to Pro to unlock this feature",
+    liveBlocked: "Live Streaming Locked",
+    liveBlockedDesc: "Subscribe to Pro to unlock live streaming",
+    watchingNow: "Watching now",
+    gifts: "Gifts",
+    liveChat: "Live Chat",
+    shareStream: "Share Stream",
+    viewerCount: "Viewer Count",
+    likesReceived: "Likes Received",
+    giftsReceived: "Gifts Received",
+    streamDuration: "Duration",
+    streamQuality: "Quality",
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+    rose: "Rose",
+    heart: "Heart",
+    star: "Star",
+    diamond: "Diamond",
+    crown: "Crown",
+    rocket: "Rocket",
+    preview: "Preview",
   },
   zh: {
     // Navigation
@@ -686,6 +739,49 @@ const translations = {
     family: "家人",
     colleagues: "同事",
     classmates: "同学",
+    // Live Streaming
+    liveStream: "直播",
+    myLiveStream: "我的直播间",
+    startLiveStream: "开始直播",
+    goLive: "开播",
+    liveNow: "直播中",
+    viewers: "观众",
+    sendGift: "送礼物",
+    liveTitle: "直播标题",
+    enterLiveTitle: "输入直播标题",
+    liveCategory: "分类",
+    selectCategory: "选择分类",
+    gaming: "游戏",
+    chatting: "聊天",
+    studying: "学习",
+    music: "音乐",
+    sports: "运动",
+    other: "其他",
+    endLiveStream: "结束直播",
+    liveSettings: "直播设置",
+    proOnlyFeature: "Pro会员专属",
+    upgradeToUnlock: "升级至Pro会员解锁此功能",
+    liveBlocked: "直播功能已锁定",
+    liveBlockedDesc: "订阅Pro会员解锁直播功能",
+    watchingNow: "正在观看",
+    gifts: "礼物",
+    liveChat: "聊天",
+    shareStream: "分享直播",
+    viewerCount: "观众数",
+    likesReceived: "收到点赞",
+    giftsReceived: "收到礼物",
+    streamDuration: "时长",
+    streamQuality: "画质",
+    high: "高清",
+    medium: "标清",
+    low: "流畅",
+    rose: "玫瑰",
+    heart: "爱心",
+    star: "星星",
+    diamond: "钻石",
+    crown: "皇冠",
+    rocket: "火箭",
+    preview: "预览",
   }
 };
 
@@ -785,6 +881,8 @@ function BottomNav({ active, navigateTo, language = "en", darkMode = false }) {
 function LoginPage({ navigateTo, language = "en", darkMode = false }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   return (
     <motion.div 
@@ -831,6 +929,7 @@ function LoginPage({ navigateTo, language = "en", darkMode = false }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={t("enterEmailOrUsername", language)}
+                autoComplete="off"
                 className={`px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all ${
                   darkMode 
                     ? "bg-slate-700/50 border-slate-600 text-white placeholder-slate-400" 
@@ -848,6 +947,7 @@ function LoginPage({ navigateTo, language = "en", darkMode = false }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t("enterPassword", language)}
+                autoComplete="new-password"
                 className={`px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all ${
                   darkMode 
                     ? "bg-slate-700/50 border-slate-600 text-white placeholder-slate-400" 
@@ -859,10 +959,22 @@ function LoginPage({ navigateTo, language = "en", darkMode = false }) {
             <motion.button 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigateTo('home')}
-              className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              onClick={async () => {
+                if (isSubmitting) return;
+                setError("");
+                setIsSubmitting(true);
+                const res = await adminLogin(username.trim(), password);
+                setIsSubmitting(false);
+                if (res.ok) {
+                  navigateTo(res.isAdmin ? 'admin-dashboard' : 'home');
+                } else {
+                  setError(res.message || '用户名或密码错误');
+                }
+              }}
+              disabled={!username || !password || isSubmitting}
+              className={`mt-4 w-full py-3.5 rounded-xl text-white font-semibold shadow-lg transition-all ${(!username || !password || isSubmitting) ? 'bg-slate-300 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-indigo-500 hover:shadow-xl'}`}
             >
-              {t("login", language)}
+              {isSubmitting ? '登录中…' : t("login", language)}
             </motion.button>
             
             <button 
@@ -871,6 +983,9 @@ function LoginPage({ navigateTo, language = "en", darkMode = false }) {
             >
               {t("forgotPassword", language)}
             </button>
+            {error && (
+              <div className={`text-sm mt-2 text-center ${darkMode ? 'text-rose-400' : 'text-rose-600'}`}>{error}</div>
+            )}
           </motion.div>
         </div>
       </div>
@@ -885,6 +1000,427 @@ function LoginPage({ navigateTo, language = "en", darkMode = false }) {
         >
           {t("signUp", language)}
         </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =================== ADMIN DASHBOARD PAGE =================== */
+function AdminDashboardPage({ navigateTo, language = 'en', darkMode = false }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [posts, setPosts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [searchText, setSearchText] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
+
+  const readLocal = (key, fallback) => {
+    if (typeof window === 'undefined') return fallback;
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  };
+
+  const writeLocal = (key, value) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (_) {}
+  };
+
+  const appendLog = (message) => {
+    const entry = { id: Date.now().toString(), time: new Date().toISOString(), message };
+    const next = [entry, ...logs].slice(0, 200);
+    setLogs(next);
+    writeLocal('seer_admin_actions_log', next);
+  };
+
+  const getDefaultUsers = () => ([
+    { id: 'u001', name: 'Alice', avatar: '/Alice.png', status: 'active', mutedUntil: null },
+    { id: 'u002', name: 'Bob', avatar: '/Bob.png', status: 'active', mutedUntil: null },
+    { id: 'u003', name: 'Charlie', avatar: '/Charlie.png', status: 'active', mutedUntil: null },
+    { id: 'u004', name: 'Emma', avatar: '/Emma.png', status: 'active', mutedUntil: null },
+    { id: 'u005', name: 'Dana', avatar: '/Dana.png', status: 'active', mutedUntil: null },
+  ]);
+
+  const getDefaultPosts = () => ([
+    { id: 'p1', authorId: 'u001', authorName: 'Alice', authorAvatar: '/Alice.png', content: 'Exploring campus today! #XJTLU', time: '2h ago', banned: false },
+    { id: 'p2', authorId: 'u002', authorName: 'Bob', authorAvatar: '/Bob.png', content: 'Group study at library, join us!', time: '3h ago', banned: false },
+    { id: 'p3', authorId: 'u003', authorName: 'Charlie', authorAvatar: '/Charlie.png', content: 'Selling used textbooks, DM me.', time: '5h ago', banned: false },
+    { id: 'p4', authorId: 'u004', authorName: 'Emma', authorAvatar: '/Emma.png', content: 'New club event this Friday!', time: '1d ago', banned: false },
+    { id: 'p5', authorId: 'u005', authorName: 'Dana', authorAvatar: '/Dana.png', content: 'Beautiful sunset over the quad 🌇', time: '2d ago', banned: false },
+  ]);
+
+  const getDefaultReports = () => ([
+    { id: 'r1', type: 'post', targetId: 'p3', targetName: 'Post p3', reporter: 'Alice', reason: '广告/Spam', time: '1h ago', status: 'pending' },
+    { id: 'r2', type: 'user', targetId: 'u002', targetName: 'Bob', reporter: 'Charlie', reason: '不当言论', time: '4h ago', status: 'pending' },
+    { id: 'r3', type: 'post', targetId: 'p2', targetName: 'Post p2', reporter: 'Emma', reason: '骚扰', time: '1d ago', status: 'resolved' },
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const ok = await adminMe();
+      if (cancelled) return;
+      if (!ok) {
+        navigateTo('login');
+        return;
+      }
+      setAuthorized(true);
+      const initUsers = readLocal('seer_admin_users', getDefaultUsers());
+      const initPosts = readLocal('seer_admin_posts', getDefaultPosts());
+      const initReports = readLocal('seer_admin_reports', getDefaultReports());
+      const initLogs = readLocal('seer_admin_actions_log', []);
+      setUsers(initUsers);
+      setPosts(initPosts);
+      setReports(initReports);
+      setLogs(initLogs);
+      setAuthChecked(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const persistAll = (nextUsers, nextPosts, nextReports) => {
+    writeLocal('seer_admin_users', nextUsers);
+    writeLocal('seer_admin_posts', nextPosts);
+    writeLocal('seer_admin_reports', nextReports);
+  };
+
+  const handleLogout = async () => {
+    await adminLogout();
+    navigateTo('login');
+  };
+
+  const togglePostBan = (postId) => {
+    const post = posts.find(p => p.id === postId);
+    const newBanned = !post?.banned;
+    const next = posts.map(p => p.id === postId ? { ...p, banned: newBanned } : p);
+    setPosts(next);
+    persistAll(users, next, reports);
+    appendLog(`${post?.authorName || ''} 的帖子(${postId}) ${newBanned ? '已封禁' : '已解禁'}`);
+  };
+
+  const deletePost = (postId) => {
+    if (typeof window !== 'undefined' && !window.confirm('确认删除该帖子？')) return;
+    const next = posts.filter(p => p.id !== postId);
+    setPosts(next);
+    persistAll(users, next, reports);
+    appendLog(`删除帖子 ${postId}`);
+  };
+
+  const muteUserDays = (userId, days = 7) => {
+    const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    const next = users.map(u => u.id === userId ? { ...u, status: 'muted', mutedUntil: until } : u);
+    setUsers(next);
+    persistAll(next, posts, reports);
+    const u = users.find(x => x.id === userId);
+    appendLog(`禁言用户 ${u?.name || userId} ${days} 天`);
+  };
+
+  const unmuteUser = (userId) => {
+    const next = users.map(u => u.id === userId ? { ...u, status: 'active', mutedUntil: null } : u);
+    setUsers(next);
+    persistAll(next, posts, reports);
+    const u = users.find(x => x.id === userId);
+    appendLog(`解除禁言 ${u?.name || userId}`);
+  };
+
+  const toggleUserBan = (userId) => {
+    const u = users.find(x => x.id === userId);
+    const newStatus = u?.status === 'banned' ? 'active' : 'banned';
+    const next = users.map(x => x.id === userId ? { ...x, status: newStatus } : x);
+    setUsers(next);
+    persistAll(next, posts, reports);
+    appendLog(`${u?.name || userId} ${newStatus === 'banned' ? '已封禁' : '已解封'}`);
+  };
+
+  const resolveReport = (reportId) => {
+    const next = reports.map(r => r.id === reportId ? { ...r, status: 'resolved' } : r);
+    setReports(next);
+    persistAll(users, posts, next);
+    appendLog(`处理举报 ${reportId}`);
+  };
+
+  const resetData = () => {
+    const initUsers = getDefaultUsers();
+    const initPosts = getDefaultPosts();
+    const initReports = getDefaultReports();
+    setUsers(initUsers);
+    setPosts(initPosts);
+    setReports(initReports);
+    persistAll(initUsers, initPosts, initReports);
+    appendLog('重置后台数据');
+  };
+
+  const exportLogs = () => {
+    const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'seer-admin-logs.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredPosts = posts.filter(p => {
+    if (!searchText.trim()) return true;
+    const q = searchText.toLowerCase();
+    return p.content.toLowerCase().includes(q) || p.authorName.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+  });
+
+  const filteredUsers = users.filter(u => {
+    if (!searchText.trim()) return true;
+    const q = searchText.toLowerCase();
+    return u.name.toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+  });
+
+  const pendingReports = reports.filter(r => r.status === 'pending');
+
+  if (!authChecked || !authorized) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`h-full flex items-center justify-center ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className={`${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>正在校验权限…</div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`h-full flex flex-col ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}
+    >
+      {/* Header */}
+      <div className={`px-4 py-3 border-b flex items-center justify-between ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigateTo('home')}
+            className={`p-2 rounded-lg ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
+          >
+            <ChevronLeft className={`w-5 h-5 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`} />
+          </button>
+          <div className={`text-lg font-bold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>后台监控</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleLogout}
+            className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            退出登录
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="px-4 pt-3">
+        <div className={`inline-flex rounded-xl p-1 ${darkMode ? 'bg-slate-800' : 'bg-white'} border ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+          {[
+            { id: 'overview', label: '首页' },
+            { id: 'posts', label: '帖子管理' },
+            { id: 'users', label: '用户管理' },
+            { id: 'reports', label: '举报处理' },
+            { id: 'settings', label: '系统设置' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium ${activeTab === tab.id ? 'bg-indigo-600 text-white' : (darkMode ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-600 hover:bg-slate-100')}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {activeTab === 'overview' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                <div className="text-sm text-slate-500">用户</div>
+                <div className="text-2xl font-bold mt-1">{users.length}</div>
+                <div className="text-xs text-slate-400 mt-1 flex items-center gap-2"><Users className="w-4 h-4" /> 总数</div>
+              </div>
+              <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                <div className="text-sm text-slate-500">被禁言</div>
+                <div className="text-2xl font-bold mt-1">{users.filter(u => u.status === 'muted').length}</div>
+                <div className="text-xs text-slate-400 mt-1">当前禁言中的用户</div>
+              </div>
+              <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                <div className="text-sm text-slate-500">帖子</div>
+                <div className="text-2xl font-bold mt-1">{posts.length}</div>
+                <div className="text-xs text-slate-400 mt-1">总帖子数</div>
+              </div>
+              <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                <div className="text-sm text-slate-500">被封禁的帖子</div>
+                <div className="text-2xl font-bold mt-1">{posts.filter(p => p.banned).length}</div>
+                <div className="text-xs text-slate-400 mt-1">违规处理数量</div>
+              </div>
+            </div>
+
+            <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-base font-semibold">待处理举报</div>
+                <div className="text-sm text-slate-500">{pendingReports.length} 条</div>
+              </div>
+              <div className="space-y-2">
+                {pendingReports.slice(0, 5).map(r => (
+                  <div key={r.id} className={`flex items-center justify-between p-3 rounded-xl ${darkMode ? 'bg-slate-900/40' : 'bg-slate-50'}`}>
+                    <div className="text-sm">
+                      <span className="font-medium">{r.reporter}</span> 举报 {r.type === 'post' ? '帖子' : '用户'} <span className="font-medium">{r.targetName}</span> ・ {r.reason}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => resolveReport(r.id)} className={`px-3 py-1 rounded-lg text-xs font-medium ${darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'}`}>标记为已处理</button>
+                    </div>
+                  </div>
+                ))}
+                {pendingReports.length === 0 && (
+                  <div className={`p-3 rounded-xl text-sm ${darkMode ? 'bg-slate-900/40 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>暂无待处理举报</div>
+                )}
+              </div>
+            </div>
+
+            <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className="text-base font-semibold mb-2">操作日志</div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {logs.map(l => (
+                  <div key={l.id} className={`text-sm p-2 rounded-lg ${darkMode ? 'bg-slate-900/40' : 'bg-slate-50'}`}>
+                    <span className="text-slate-400">[{new Date(l.time).toLocaleString()}]</span> {l.message}
+                  </div>
+                ))}
+                {logs.length === 0 && <div className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>暂无日志</div>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'posts' && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="搜索帖子/作者/ID…"
+                className={`flex-1 px-4 py-2 rounded-lg border ${darkMode ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200'}`}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filteredPosts.map(p => (
+                <div key={p.id} className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                  <div className="flex items-center gap-3">
+                    <img src={p.authorAvatar} alt={p.authorName} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold">{p.authorName} <span className="text-slate-400 font-normal">· {p.time}</span></div>
+                      <div className={`text-sm mt-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{p.content}</div>
+                    </div>
+                    <div>
+                      <span className={`px-2 py-1 rounded text-xs ${p.banned ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-700'}`}>{p.banned ? '已封禁' : '正常'}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <button onClick={() => togglePostBan(p.id)} className={`px-3 py-2 rounded-lg text-sm font-medium ${p.banned ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>{p.banned ? '解禁' : '封禁'}</button>
+                    <button onClick={() => deletePost(p.id)} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-700'}`}>删除</button>
+                    <button onClick={() => navigateTo('post-detail', { postId: p.id })} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'}`}>查看详情</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {filteredPosts.length === 0 && (
+              <div className={`p-4 rounded-xl text-sm ${darkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-500'}`}>没有匹配的帖子</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="搜索用户/ID…"
+                className={`flex-1 px-4 py-2 rounded-lg border ${darkMode ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200'}`}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filteredUsers.map(u => (
+                <div key={u.id} className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                  <div className="flex items-center gap-3">
+                    <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold">{u.name} <span className="text-slate-400 font-normal">· {u.id}</span></div>
+                      <div className="text-xs text-slate-500">{u.status === 'muted' && u.mutedUntil ? `禁言至 ${new Date(u.mutedUntil).toLocaleString()}` : u.status === 'banned' ? '已封禁' : '正常'}</div>
+                    </div>
+                    <div>
+                      <span className={`px-2 py-1 rounded text-xs ${u.status === 'banned' ? 'bg-rose-100 text-rose-600' : u.status === 'muted' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>{u.status === 'banned' ? '封禁' : u.status === 'muted' ? '禁言' : '正常'}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    {u.status !== 'muted' && <button onClick={() => muteUserDays(u.id, 7)} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-amber-500 text-white' : 'bg-amber-500 text-white'}`}>禁言7天</button>}
+                    {u.status === 'muted' && <button onClick={() => unmuteUser(u.id)} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-emerald-600 text-white' : 'bg-emerald-600 text-white'}`}>解除禁言</button>}
+                    <button onClick={() => toggleUserBan(u.id)} className={`px-3 py-2 rounded-lg text-sm font-medium ${u.status === 'banned' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>{u.status === 'banned' ? '解封' : '封禁'}</button>
+                    <button onClick={() => navigateTo('user-profile', { userId: u.id })} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'}`}>查看资料</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {filteredUsers.length === 0 && (
+              <div className={`p-4 rounded-xl text-sm ${darkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-500'}`}>没有匹配的用户</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="space-y-3">
+            {reports.map(r => (
+              <div key={r.id} className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold">{r.type === 'post' ? '帖子' : '用户'} · {r.targetName}</div>
+                    <div className={`text-xs mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>举报人：{r.reporter} ・ 原因：{r.reason} ・ 时间：{r.time}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded text-xs ${r.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>{r.status === 'pending' ? '待处理' : '已处理'}</span>
+                    {r.status === 'pending' && (<button onClick={() => resolveReport(r.id)} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'}`}>标记为已处理</button>)}
+                    {r.type === 'post' && <button onClick={() => togglePostBan(r.targetId)} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-rose-600 text-white' : 'bg-rose-600 text-white'}`}>封禁帖子</button>}
+                    {r.type === 'user' && <button onClick={() => toggleUserBan(r.targetId)} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-rose-600 text-white' : 'bg-rose-600 text-white'}`}>封禁用户</button>}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {reports.length === 0 && (
+              <div className={`p-4 rounded-xl text-sm ${darkMode ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-500'}`}>暂无举报记录</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-4">
+            <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className="text-base font-semibold mb-2">管理员信息</div>
+              <div className={`text-sm ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>账号：{(typeof window !== 'undefined' && localStorage.getItem('seer_admin_name')) || 'Admin'}</div>
+            </div>
+
+            <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className="text-base font-semibold mb-2">数据维护</div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={resetData} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>重置演示数据</button>
+                <button onClick={exportLogs} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-indigo-600 text-white' : 'bg-indigo-600 text-white'}`}>导出操作日志</button>
+                <button onClick={() => { setLogs([]); writeLocal('seer_admin_actions_log', []); }} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-rose-600 text-white' : 'bg-rose-600 text-white'}`}>清空日志</button>
+              </div>
+            </div>
+
+            <div className={`rounded-2xl p-4 shadow ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className="text-base font-semibold mb-2">会话</div>
+              <button onClick={handleLogout} className={`px-3 py-2 rounded-lg text-sm font-medium ${darkMode ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>退出登录</button>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -2106,6 +2642,32 @@ function ChatPage({ navigateTo, language = "en", darkMode = false }) {
           
           {/* Chat List */}
           <div className="px-2 pb-28">
+            {/* Pinned AI entry (looks like a normal chat row) */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => navigateTo('ai-loading')}
+              className={`flex items-center gap-3 p-3 m-2 rounded-2xl border shadow-sm cursor-pointer ${
+                darkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100"
+              }`}
+            >
+              <div className="relative">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 shadow flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`font-semibold truncate ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                  <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">{language === 'zh' ? '君谋AI' : 'Junmou AI'}</span>
+                </div>
+                <div className={`text-sm truncate ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {language === 'zh' ? '点击开始 · 聊天 / 图片 / 音乐 / 视频' : 'Tap to start · Chat / Images / Music / Video'}
+                </div>
+              </div>
+              <div className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>置顶</div>
+            </motion.div>
             {conversations.map((chat, index) => (
               <motion.div
                 key={chat.id}
@@ -3309,6 +3871,28 @@ function ChatDetailPage({ navigateTo, language = "en", darkMode = false }) {
             Online
           </div>
         </div>
+        {/* Voice Call Button */}
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigateTo('voice-call', { username: 'Charlie', avatar: '/Charlie.png', userId: 'u003' })}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"
+          }`}
+        >
+          <Phone className="w-5 h-5" />
+        </motion.button>
+        {/* Video Call Button */}
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigateTo('video-call', { username: 'Charlie', avatar: '/Charlie.png', userId: 'u003' })}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"
+          }`}
+        >
+          <Video className="w-5 h-5" />
+        </motion.button>
         <button 
           onClick={() => navigateTo('chat-settings-c001')}
           className={`p-2 rounded-lg transition-colors ${
@@ -4620,6 +5204,28 @@ function EmmaChatDetail({ navigateTo, language = "en", darkMode = false }) {
             Online
           </div>
         </div>
+        {/* Voice Call Button */}
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigateTo('voice-call', { username: 'Emma', avatar: '/Emma.png', userId: 'u004' })}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"
+          }`}
+        >
+          <Phone className="w-5 h-5" />
+        </motion.button>
+        {/* Video Call Button */}
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigateTo('video-call', { username: 'Emma', avatar: '/Emma.png', userId: 'u004' })}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? "hover:bg-slate-700 text-slate-300" : "hover:bg-slate-100 text-slate-600"
+          }`}
+        >
+          <Video className="w-5 h-5" />
+        </motion.button>
       </div>
 
       {/* Messages */}
@@ -4943,6 +5549,1477 @@ function AddFriendPage({ navigateTo, language = "en", darkMode = false }) {
   );
 }
 
+/* =================== LIVE STREAM SETUP PAGE =================== */
+function LiveStreamSetupPage({ navigateTo, language = "en", darkMode = false }) {
+  const [liveTitle, setLiveTitle] = useState('');
+  const [category, setCategory] = useState('chatting');
+  const [quality, setQuality] = useState('high');
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false);
+
+  const categories = [
+    { id: 'gaming', label: t('gaming', language), icon: <Gamepad2 className="w-5 h-5" /> },
+    { id: 'chatting', label: t('chatting', language), icon: <MessageCircle className="w-5 h-5" /> },
+    { id: 'studying', label: t('studying', language), icon: <Library className="w-5 h-5" /> },
+    { id: 'music', label: t('music', language), icon: <Radio className="w-5 h-5" /> },
+    { id: 'sports', label: t('sports', language), icon: <Dumbbell className="w-5 h-5" /> },
+    { id: 'other', label: t('other', language), icon: <MoreVertical className="w-5 h-5" /> },
+  ];
+
+  const selectedCategory = categories.find(c => c.id === category) || categories[1];
+
+  const handleStartStream = () => {
+    if (!liveTitle.trim()) {
+      alert(language === 'zh' ? '请输入直播标题' : 'Please enter a live title');
+      return;
+    }
+    navigateTo('live-stream-broadcasting', { liveTitle, category, quality });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`h-full relative flex flex-col transition-colors duration-500 ${
+        darkMode ? "bg-slate-900" : "bg-slate-50"
+      }`}
+    >
+      {/* Header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b transition-colors ${
+        darkMode ? "border-slate-700 bg-slate-800" : "border-slate-100 bg-white"
+      }`}>
+        <button onClick={() => navigateTo('mine')} className="p-2">
+          <ChevronLeft className={`w-6 h-6 ${darkMode ? "text-slate-300" : "text-slate-600"}`} />
+        </button>
+        <div className={`text-xl font-bold ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
+          {t("liveSettings", language)}
+        </div>
+        <div className="w-10" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-28">
+        {/* Preview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-2xl overflow-hidden mb-6 aspect-video relative ${
+            darkMode ? "bg-slate-800" : "bg-slate-200"
+          }`}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Camera className={`w-16 h-16 ${darkMode ? "text-slate-600" : "text-slate-400"}`} />
+          </div>
+          <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
+            <span className="text-white text-sm font-medium">{t("preview", language) || "Preview"}</span>
+          </div>
+        </motion.div>
+
+        {/* Live Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <label className={`block mb-2 text-sm font-medium ${
+            darkMode ? "text-slate-300" : "text-slate-700"
+          }`}>
+            {t("liveTitle", language)}
+          </label>
+          <input
+            type="text"
+            value={liveTitle}
+            onChange={(e) => setLiveTitle(e.target.value)}
+            placeholder={t("enterLiveTitle", language)}
+            className={`w-full px-4 py-3 rounded-xl border transition-all ${
+              darkMode 
+                ? "bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500" 
+                : "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
+            } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          />
+        </motion.div>
+
+        {/* Category */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6"
+        >
+          <label className={`block mb-2 text-sm font-medium ${
+            darkMode ? "text-slate-300" : "text-slate-700"
+          }`}>
+            {t("liveCategory", language)}
+          </label>
+          <div className="relative">
+            <button
+              onClick={() => setShowCategoryMenu(!showCategoryMenu)}
+              className={`w-full px-4 py-3 rounded-xl border flex items-center justify-between transition-all ${
+                darkMode 
+                  ? "bg-slate-800 border-slate-700 text-slate-200" 
+                  : "bg-white border-slate-200 text-slate-800"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {selectedCategory.icon}
+                <span>{selectedCategory.label}</span>
+              </div>
+              <ChevronRight className={`w-5 h-5 transition-transform ${showCategoryMenu ? 'rotate-90' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {showCategoryMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`absolute top-full left-0 right-0 mt-2 rounded-xl border shadow-lg overflow-hidden z-10 ${
+                    darkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
+                  }`}
+                >
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setCategory(cat.id);
+                        setShowCategoryMenu(false);
+                      }}
+                      className={`w-full px-4 py-3 flex items-center gap-2 transition-colors ${
+                        category === cat.id
+                          ? darkMode ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-600"
+                          : darkMode ? "text-slate-300 hover:bg-slate-700" : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {cat.icon}
+                      <span>{cat.label}</span>
+                      {category === cat.id && <Check className="w-4 h-4 ml-auto" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Quality */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <label className={`block mb-2 text-sm font-medium ${
+            darkMode ? "text-slate-300" : "text-slate-700"
+          }`}>
+            {t("streamQuality", language)}
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {['high', 'medium', 'low'].map((q) => (
+              <button
+                key={q}
+                onClick={() => setQuality(q)}
+                className={`py-3 rounded-xl font-medium transition-all ${
+                  quality === q
+                    ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg"
+                    : darkMode 
+                      ? "bg-slate-800 text-slate-300 border border-slate-700" 
+                      : "bg-white text-slate-700 border border-slate-200"
+                }`}
+              >
+                {t(q, language)}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Start Button */}
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleStartStream}
+          className="w-full py-4 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-lg shadow-lg"
+        >
+          {t("goLive", language)}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =================== LIVE STREAM BROADCASTING PAGE =================== */
+function LiveStreamBroadcastingPage({ navigateTo, language = "en", darkMode = false, liveTitle = "My Live Stream", category = "chatting" }) {
+  const [viewers, setViewers] = useState(0);
+  const [likes, setLikes] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [comments, setComments] = useState([
+    { id: 1, username: "Alice", message: "Hello! 👋", avatar: "/Alice.png" },
+    { id: 2, username: "Bob", message: "Great stream!", avatar: "/Bob.png" },
+  ]);
+
+  React.useEffect(() => {
+    // Simulate viewer count changes
+    const viewerInterval = setInterval(() => {
+      setViewers(prev => Math.max(0, prev + Math.floor(Math.random() * 3) - 1));
+    }, 3000);
+
+    // Update duration
+    const durationInterval = setInterval(() => {
+      setDuration(prev => prev + 1);
+    }, 1000);
+
+    // Simulate new comments
+    const commentInterval = setInterval(() => {
+      const messages = [
+        "Nice!", "Cool!", "Amazing!", "Love it! ❤️", "Keep going!", 
+        language === 'zh' ? "太棒了！" : "Awesome!",
+        language === 'zh' ? "支持支持" : "Support!",
+      ];
+      const newComment = {
+        id: Date.now(),
+        username: `User${Math.floor(Math.random() * 100)}`,
+        message: messages[Math.floor(Math.random() * messages.length)],
+        avatar: `/Dana.png`,
+      };
+      setComments(prev => [...prev.slice(-10), newComment]);
+    }, 5000);
+
+    return () => {
+      clearInterval(viewerInterval);
+      clearInterval(durationInterval);
+      clearInterval(commentInterval);
+    };
+  }, [language]);
+
+  const formatDuration = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleEndStream = () => {
+    if (window.confirm(language === 'zh' ? '确定要结束直播吗？' : 'Are you sure you want to end the stream?')) {
+      navigateTo('mine');
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-full relative bg-black"
+    >
+      {/* Video Preview */}
+      <div className="h-full flex items-center justify-center">
+        <Camera className="w-24 h-24 text-slate-600" />
+      </div>
+
+      {/* Top Overlay */}
+      <div className="absolute top-0 left-0 right-0 p-4">
+        <div className="flex items-center justify-between">
+          {/* LIVE Badge */}
+          <motion.div
+            animate={{ opacity: [1, 0.5, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-rose-500 shadow-lg"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span className="text-white font-bold text-sm">{t("liveNow", language)}</span>
+            </div>
+          </motion.div>
+
+          {/* Stats */}
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
+              <div className="flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-white" />
+                <span className="text-white font-medium text-sm">{viewers}</span>
+              </div>
+            </div>
+            <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
+              <span className="text-white font-medium text-sm">{formatDuration(duration)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="mt-3 px-3 py-2 rounded-xl bg-black/50 backdrop-blur-sm max-w-md">
+          <div className="text-white font-medium">{liveTitle}</div>
+        </div>
+      </div>
+
+      {/* Bottom Overlay - Comments */}
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <div className="mb-4 space-y-2">
+          {comments.slice(-3).map((comment) => (
+            <motion.div
+              key={comment.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="px-3 py-2 rounded-xl bg-black/50 backdrop-blur-sm max-w-xs"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="text-amber-400 font-semibold text-sm">{comment.username}</div>
+              </div>
+              <div className="text-white text-sm">{comment.message}</div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setLikes(prev => prev + 1)}
+            className="flex-1 py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white font-medium flex items-center justify-center gap-2"
+          >
+            <Heart className="w-5 h-5" />
+            <span>{likes}</span>
+          </button>
+          <button
+            onClick={handleEndStream}
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white font-bold"
+          >
+            {t("endLiveStream", language)}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =================== VOICE CALL PAGE =================== */
+function VoiceCallPage({ navigateTo, language = "en", darkMode = false, username = "Charlie", avatar = "/Charlie.png" }) {
+  const [callStatus, setCallStatus] = useState('connecting'); // connecting, connected, ended
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+
+  React.useEffect(() => {
+    // Simulate connecting
+    const connectTimer = setTimeout(() => {
+      setCallStatus('connected');
+    }, 2000);
+
+    return () => clearTimeout(connectTimer);
+  }, []);
+
+  React.useEffect(() => {
+    if (callStatus === 'connected') {
+      const durationTimer = setInterval(() => {
+        setDuration(prev => prev + 1);
+      }, 1000);
+
+      return () => clearInterval(durationTimer);
+    }
+  }, [callStatus]);
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleEndCall = () => {
+    setCallStatus('ended');
+    setTimeout(() => {
+      navigateTo('chat-detail-c001');
+    }, 1000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-full relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900"
+    >
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
+
+      {/* Content */}
+      <div className="relative h-full flex flex-col items-center justify-between p-8">
+        {/* Top: Status */}
+        <div className="text-center">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="text-white/90 text-lg mb-2"
+          >
+            {callStatus === 'connecting' ? (
+              <span>{language === 'zh' ? '连接中...' : 'Connecting...'}</span>
+            ) : callStatus === 'connected' ? (
+              <span>{formatDuration(duration)}</span>
+            ) : (
+              <span>{language === 'zh' ? '通话已结束' : 'Call Ended'}</span>
+            )}
+          </motion.div>
+        </div>
+
+        {/* Middle: Avatar */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-col items-center"
+        >
+          <div className="relative">
+            <motion.div
+              animate={callStatus === 'connecting' ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="relative"
+            >
+              <img
+                src={avatar}
+                alt={username}
+                className="w-32 h-32 rounded-full object-cover shadow-2xl ring-4 ring-white/20"
+              />
+              {callStatus === 'connecting' && (
+                <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping" />
+              )}
+            </motion.div>
+          </div>
+          <div className="mt-6 text-white text-2xl font-semibold">{username}</div>
+          <div className="mt-2 text-white/70 text-sm">
+            {callStatus === 'connecting' 
+              ? (language === 'zh' ? '正在呼叫...' : 'Calling...') 
+              : (language === 'zh' ? '通话中' : 'On Call')}
+          </div>
+        </motion.div>
+
+        {/* Bottom: Controls */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="w-full max-w-sm"
+        >
+          <div className="flex justify-center items-center gap-6">
+            {/* Mute Button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsMuted(!isMuted)}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                isMuted 
+                  ? 'bg-white/90 text-red-600' 
+                  : 'bg-white/20 backdrop-blur-sm text-white'
+              }`}
+            >
+              {isMuted ? <Mic className="w-6 h-6 line-through" /> : <Mic className="w-6 h-6" />}
+            </motion.button>
+
+            {/* End Call Button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleEndCall}
+              className="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center shadow-2xl"
+            >
+              <Phone className="w-8 h-8 text-white rotate-135" />
+            </motion.button>
+
+            {/* Speaker Button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                isSpeakerOn 
+                  ? 'bg-white/90 text-indigo-600' 
+                  : 'bg-white/20 backdrop-blur-sm text-white'
+              }`}
+            >
+              <Volume2 className="w-6 h-6" />
+            </motion.button>
+          </div>
+
+          <div className="mt-6 flex justify-center gap-4 text-white/60 text-xs">
+            <span>{isMuted ? (language === 'zh' ? '已静音' : 'Muted') : (language === 'zh' ? '麦克风开启' : 'Mic On')}</span>
+            <span>•</span>
+            <span>{isSpeakerOn ? (language === 'zh' ? '扬声器开启' : 'Speaker On') : (language === 'zh' ? '听筒模式' : 'Earpiece')}</span>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =================== VIDEO CALL PAGE =================== */
+function VideoCallPage({ navigateTo, language = "en", darkMode = false, username = "Charlie", avatar = "/Charlie.png" }) {
+  const [callStatus, setCallStatus] = useState('connecting'); // connecting, connected, ended
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
+  const [isFrontCamera, setIsFrontCamera] = useState(true);
+
+  React.useEffect(() => {
+    // Simulate connecting
+    const connectTimer = setTimeout(() => {
+      setCallStatus('connected');
+    }, 2000);
+
+    return () => clearTimeout(connectTimer);
+  }, []);
+
+  React.useEffect(() => {
+    if (callStatus === 'connected') {
+      const durationTimer = setInterval(() => {
+        setDuration(prev => prev + 1);
+      }, 1000);
+
+      return () => clearInterval(durationTimer);
+    }
+  }, [callStatus]);
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleEndCall = () => {
+    setCallStatus('ended');
+    setTimeout(() => {
+      navigateTo('chat-detail-c001');
+    }, 1000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-full relative bg-black"
+    >
+      {/* Main Video (Peer) */}
+      <div className="h-full relative flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+        {callStatus === 'connecting' ? (
+          <div className="flex flex-col items-center">
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <img
+                src={avatar}
+                alt={username}
+                className="w-32 h-32 rounded-full object-cover shadow-2xl"
+              />
+            </motion.div>
+            <div className="mt-6 text-white text-xl font-semibold">{username}</div>
+            <div className="mt-2 text-white/70">{language === 'zh' ? '正在呼叫...' : 'Calling...'}</div>
+          </div>
+        ) : (
+          <Camera className="w-24 h-24 text-slate-600" />
+        )}
+      </div>
+
+      {/* Self Video (PiP) */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="absolute top-4 right-4 w-28 h-40 rounded-2xl overflow-hidden bg-slate-800 shadow-2xl"
+      >
+        {isCameraOff ? (
+          <div className="h-full flex items-center justify-center bg-slate-700">
+            <Camera className="w-8 h-8 text-slate-500" />
+          </div>
+        ) : (
+          <div className="h-full flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600">
+            <User className="w-12 h-12 text-white/50" />
+          </div>
+        )}
+      </motion.div>
+
+      {/* Top Bar */}
+      <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent">
+        <div className="flex items-center justify-between">
+          <div className="text-white font-semibold">{username}</div>
+          <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm">
+            <span className="text-white text-sm">
+              {callStatus === 'connected' ? formatDuration(duration) : (language === 'zh' ? '连接中...' : 'Connecting...')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Controls */}
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+        <div className="flex justify-center items-center gap-6">
+          {/* Mute Button */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsMuted(!isMuted)}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+              isMuted 
+                ? 'bg-white text-red-600' 
+                : 'bg-white/20 backdrop-blur-sm text-white'
+            }`}
+          >
+            {isMuted ? <Mic className="w-5 h-5 line-through" /> : <Mic className="w-5 h-5" />}
+          </motion.button>
+
+          {/* Camera Off Button */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsCameraOff(!isCameraOff)}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+              isCameraOff 
+                ? 'bg-white text-red-600' 
+                : 'bg-white/20 backdrop-blur-sm text-white'
+            }`}
+          >
+            {isCameraOff ? <Camera className="w-5 h-5 line-through" /> : <Camera className="w-5 h-5" />}
+          </motion.button>
+
+          {/* End Call Button */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleEndCall}
+            className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-2xl"
+          >
+            <Phone className="w-6 h-6 text-white rotate-135" />
+          </motion.button>
+
+          {/* Flip Camera Button */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsFrontCamera(!isFrontCamera)}
+            className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =================== WATCH LIVE STREAM PAGE =================== */
+function WatchLiveStreamPage({ navigateTo, language = "en", darkMode = false, streamId = "stream_001", username = "Alice", title = "Study Session" }) {
+  const [viewers, setViewers] = useState(156);
+  const [likes, setLikes] = useState(342);
+  const [comments, setComments] = useState([
+    { id: 1, username: "Bob", message: "Great content! 👍", avatar: "/Bob.png" },
+    { id: 2, username: "Charlie", message: "Keep it up!", avatar: "/Charlie.png" },
+  ]);
+  const [showGiftPanel, setShowGiftPanel] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const gifts = [
+    { id: 'rose', name: t('rose', language) || 'Rose', icon: '🌹', cost: 10 },
+    { id: 'heart', name: t('heart', language) || 'Heart', icon: '❤️', cost: 50 },
+    { id: 'star', name: t('star', language) || 'Star', icon: '⭐', cost: 100 },
+    { id: 'diamond', name: t('diamond', language) || 'Diamond', icon: '💎', cost: 500 },
+    { id: 'crown', name: t('crown', language) || 'Crown', icon: '👑', cost: 1000 },
+    { id: 'rocket', name: t('rocket', language) || 'Rocket', icon: '🚀', cost: 5000 },
+  ];
+
+  React.useEffect(() => {
+    // Simulate viewer count changes
+    const viewerInterval = setInterval(() => {
+      setViewers(prev => Math.max(0, prev + Math.floor(Math.random() * 5) - 2));
+    }, 3000);
+
+    // Simulate new comments
+    const commentInterval = setInterval(() => {
+      const messages = [
+        "Nice!", "Cool!", "Amazing!", "Love it! ❤️", 
+        language === 'zh' ? "太棒了！" : "Awesome!",
+        language === 'zh' ? "支持" : "Support!",
+      ];
+      const newComment = {
+        id: Date.now(),
+        username: `User${Math.floor(Math.random() * 100)}`,
+        message: messages[Math.floor(Math.random() * messages.length)],
+        avatar: `/Dana.png`,
+      };
+      setComments(prev => [...prev.slice(-15), newComment]);
+    }, 4000);
+
+    return () => {
+      clearInterval(viewerInterval);
+      clearInterval(commentInterval);
+    };
+  }, [language]);
+
+  const handleSendMessage = () => {
+    if (message.trim()) {
+      const newComment = {
+        id: Date.now(),
+        username: "Dana",
+        message: message,
+        avatar: "/Dana.png",
+      };
+      setComments(prev => [...prev, newComment]);
+      setMessage('');
+    }
+  };
+
+  const handleSendGift = (gift) => {
+    // Check diamonds
+    const diamonds = parseInt(localStorage.getItem('seer_diamonds') || '0');
+    if (diamonds < gift.cost) {
+      alert(language === 'zh' ? '钻石不足' : 'Not enough diamonds');
+      return;
+    }
+    
+    // Deduct diamonds
+    localStorage.setItem('seer_diamonds', (diamonds - gift.cost).toString());
+    
+    // Add gift animation to comments
+    const giftComment = {
+      id: Date.now(),
+      username: "Dana",
+      message: `${language === 'zh' ? '送出了' : 'sent'} ${gift.icon} ${gift.name}`,
+      avatar: "/Dana.png",
+      isGift: true,
+    };
+    setComments(prev => [...prev, giftComment]);
+    setShowGiftPanel(false);
+    
+    alert(`${language === 'zh' ? '礼物已送出！' : 'Gift sent!'}`);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-full relative bg-black"
+    >
+      {/* Video Player */}
+      <div className="h-full flex items-center justify-center">
+        <Camera className="w-24 h-24 text-slate-700" />
+      </div>
+
+      {/* Top Bar */}
+      <div className="absolute top-0 left-0 right-0 p-4">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => navigateTo('home')} 
+            className="p-2 rounded-full bg-black/50 backdrop-blur-sm"
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
+
+          {/* Streamer Info */}
+          <div className="flex-1 mx-3 px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <img src="/Alice.png" alt={username} className="w-8 h-8 rounded-full" />
+              <div className="flex-1">
+                <div className="text-white font-semibold text-sm">{username}</div>
+                <div className="text-white/70 text-xs">{title}</div>
+              </div>
+              <motion.div
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="px-2 py-1 rounded-full bg-red-500"
+              >
+                <span className="text-white text-xs font-bold">{t("liveNow", language)}</span>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Viewer Count */}
+          <div className="px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm">
+            <div className="flex items-center gap-1.5">
+              <Eye className="w-4 h-4 text-white" />
+              <span className="text-white font-medium text-sm">{viewers}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="absolute left-0 right-0 bottom-24 p-4 pointer-events-none">
+        <div className="space-y-2">
+          {comments.slice(-4).map((comment) => (
+            <motion.div
+              key={comment.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={`px-3 py-2 rounded-xl max-w-xs ${
+                comment.isGift 
+                  ? 'bg-gradient-to-r from-amber-500/80 to-rose-500/80 backdrop-blur-sm' 
+                  : 'bg-black/50 backdrop-blur-sm'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`font-semibold text-sm ${
+                  comment.isGift ? 'text-white' : 'text-amber-400'
+                }`}>
+                  {comment.username}
+                </div>
+              </div>
+              <div className="text-white text-sm">{comment.message}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+        <div className="flex items-center gap-3">
+          {/* Message Input */}
+          <div className="flex-1 flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              placeholder={t("typeMessage", language)}
+              className="flex-1 bg-transparent text-white placeholder-white/50 outline-none text-sm"
+            />
+            <button onClick={handleSendMessage}>
+              <Send className="w-5 h-5 text-white/70" />
+            </button>
+          </div>
+
+          {/* Like Button */}
+          <button
+            onClick={() => setLikes(prev => prev + 1)}
+            className="p-3 rounded-full bg-white/10 backdrop-blur-sm"
+          >
+            <Heart className="w-6 h-6 text-rose-500 fill-rose-500" />
+          </button>
+
+          {/* Gift Button */}
+          <button
+            onClick={() => setShowGiftPanel(!showGiftPanel)}
+            className="p-3 rounded-full bg-gradient-to-r from-amber-500 to-rose-500"
+          >
+            <Gift className="w-6 h-6 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Gift Panel */}
+      <AnimatePresence>
+        {showGiftPanel && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 30 }}
+            className="absolute bottom-0 left-0 right-0 bg-slate-900 rounded-t-3xl p-6 max-h-[60vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-white font-bold text-lg">{t("gifts", language)}</div>
+              <button onClick={() => setShowGiftPanel(false)}>
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
+            </div>
+            
+            {/* Diamond Balance */}
+            <div className="mb-4 px-4 py-3 rounded-xl bg-slate-800 flex items-center justify-between">
+              <span className="text-slate-300">{t("diamonds", language)}</span>
+              <div className="flex items-center gap-2">
+                <Gem className="w-5 h-5 text-blue-400" />
+                <span className="text-white font-bold">
+                  {localStorage.getItem('seer_diamonds') || '0'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {gifts.map((gift) => (
+                <motion.button
+                  key={gift.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleSendGift(gift)}
+                  className="p-4 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors"
+                >
+                  <div className="text-4xl mb-2">{gift.icon}</div>
+                  <div className="text-white text-sm font-medium mb-1">{gift.name}</div>
+                  <div className="flex items-center justify-center gap-1">
+                    <Gem className="w-3 h-3 text-blue-400" />
+                    <span className="text-slate-400 text-xs">{gift.cost}</span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => navigateTo('diamond-recharge')}
+              className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold"
+            >
+              {t("buyDiamonds", language)}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/* =================== ACTIVITIES LIST PAGE =================== */
+function ActivitiesListPage({ navigateTo, language = "en", darkMode = false }) {
+  const [activeCategory, setActiveCategory] = useState('all');
+
+  const categories = [
+    { id: 'all', label: language === 'zh' ? '全部' : 'All', icon: <Globe className="w-4 h-4" /> },
+    { id: 'lecture', label: language === 'zh' ? '讲座' : 'Lecture', icon: <Library className="w-4 h-4" /> },
+    { id: 'party', label: language === 'zh' ? '聚会' : 'Party', icon: <Users className="w-4 h-4" /> },
+    { id: 'sports', label: language === 'zh' ? '运动' : 'Sports', icon: <Dumbbell className="w-4 h-4" /> },
+    { id: 'study', label: language === 'zh' ? '学习' : 'Study', icon: <Library className="w-4 h-4" /> },
+  ];
+
+  const activities = [
+    {
+      id: 'act001',
+      title: language === 'zh' ? 'AI技术分享讲座' : 'AI Technology Seminar',
+      category: 'lecture',
+      date: '2025-11-05',
+      time: '14:00',
+      location: language === 'zh' ? '图书馆报告厅' : 'Library Hall',
+      participants: 45,
+      maxParticipants: 100,
+      organizer: 'Alice',
+      avatar: '/Alice.png',
+      description: language === 'zh' ? '探讨人工智能最新发展趋势' : 'Discuss latest AI trends',
+      isJoined: false,
+    },
+    {
+      id: 'act002',
+      title: language === 'zh' ? '周末篮球赛' : 'Weekend Basketball Match',
+      category: 'sports',
+      date: '2025-11-06',
+      time: '16:00',
+      location: language === 'zh' ? '体育中心' : 'Sports Center',
+      participants: 12,
+      maxParticipants: 20,
+      organizer: 'Bob',
+      avatar: '/Bob.png',
+      description: language === 'zh' ? '友谊篮球赛，欢迎参加' : 'Friendly basketball match, all welcome',
+      isJoined: true,
+    },
+    {
+      id: 'act003',
+      title: language === 'zh' ? '编程马拉松' : 'Hackathon 2025',
+      category: 'study',
+      date: '2025-11-10',
+      time: '09:00',
+      location: language === 'zh' ? '创新实验室' : 'Innovation Lab',
+      participants: 28,
+      maxParticipants: 50,
+      organizer: 'Charlie',
+      avatar: '/Charlie.png',
+      description: language === 'zh' ? '24小时编程挑战赛' : '24-hour coding challenge',
+      isJoined: false,
+    },
+  ];
+
+  const filteredActivities = activeCategory === 'all' 
+    ? activities 
+    : activities.filter(act => act.category === activeCategory);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`h-full relative flex flex-col transition-colors duration-500 ${
+        darkMode ? "bg-slate-900" : "bg-slate-50"
+      }`}
+    >
+      {/* Header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b transition-colors ${
+        darkMode ? "border-slate-700 bg-slate-800" : "border-slate-100 bg-white"
+      }`}>
+        <div className={`text-xl font-bold ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
+          {language === 'zh' ? '校园活动' : 'Campus Activities'}
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigateTo('create-activity')}
+          className="p-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+        >
+          <Plus className="w-5 h-5" />
+        </motion.button>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="px-4 py-3 overflow-x-auto">
+        <div className="flex gap-2">
+          {categories.map((cat) => (
+            <motion.button
+              key={cat.id}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                activeCategory === cat.id
+                  ? darkMode
+                    ? "bg-indigo-600 text-white"
+                    : "bg-indigo-600 text-white"
+                  : darkMode
+                  ? "bg-slate-800 text-slate-300"
+                  : "bg-white text-slate-700 border border-slate-200"
+              }`}
+            >
+              {cat.icon}
+              <span>{cat.label}</span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* Activities List */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 pb-28 space-y-3">
+        {filteredActivities.map((activity, index) => (
+          <motion.div
+            key={activity.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.02 }}
+            onClick={() => navigateTo('activity-detail', { activityId: activity.id })}
+            className={`rounded-2xl p-4 cursor-pointer transition-all ${
+              darkMode ? "bg-slate-800" : "bg-white shadow-sm"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <img
+                src={activity.avatar}
+                alt={activity.organizer}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className={`font-bold text-lg ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
+                      {activity.title}
+                    </h3>
+                    <div className={`text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                      {language === 'zh' ? '组织者：' : 'Organizer: '}{activity.organizer}
+                    </div>
+                  </div>
+                  {activity.isJoined && (
+                    <div className="px-3 py-1 rounded-full bg-green-500/20 text-green-600 text-xs font-medium">
+                      {language === 'zh' ? '已报名' : 'Joined'}
+                    </div>
+                  )}
+                </div>
+                
+                <div className={`text-sm mb-2 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  {activity.description}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <div className={`flex items-center gap-1 text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                    <Calendar className="w-4 h-4" />
+                    <span>{activity.date} {activity.time}</span>
+                  </div>
+                  <div className={`flex items-center gap-1 text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                    <Globe className="w-4 h-4" />
+                    <span>{activity.location}</span>
+                  </div>
+                  <div className={`flex items-center gap-1 text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                    <Users className="w-4 h-4" />
+                    <span>{activity.participants}/{activity.maxParticipants}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <BottomNav active="discover" navigateTo={navigateTo} language={language} darkMode={darkMode} />
+    </motion.div>
+  );
+}
+
+/* =================== CREATE ACTIVITY PAGE =================== */
+function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('lecture');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [location, setLocation] = useState('');
+  const [maxParticipants, setMaxParticipants] = useState('50');
+  const [description, setDescription] = useState('');
+
+  const categories = [
+    { id: 'lecture', label: language === 'zh' ? '讲座' : 'Lecture' },
+    { id: 'party', label: language === 'zh' ? '聚会' : 'Party' },
+    { id: 'sports', label: language === 'zh' ? '运动' : 'Sports' },
+    { id: 'study', label: language === 'zh' ? '学习' : 'Study' },
+  ];
+
+  const handleCreate = () => {
+    if (!title || !date || !time || !location) {
+      alert(language === 'zh' ? '请填写所有必填项' : 'Please fill all required fields');
+      return;
+    }
+    alert(language === 'zh' ? '活动创建成功！' : 'Activity created successfully!');
+    navigateTo('activities-list');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`h-full relative flex flex-col transition-colors duration-500 ${
+        darkMode ? "bg-slate-900" : "bg-slate-50"
+      }`}
+    >
+      {/* Header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b transition-colors ${
+        darkMode ? "border-slate-700 bg-slate-800" : "border-slate-100 bg-white"
+      }`}>
+        <button onClick={() => navigateTo('activities-list')} className="p-2">
+          <ChevronLeft className={`w-6 h-6 ${darkMode ? "text-slate-300" : "text-slate-600"}`} />
+        </button>
+        <div className={`text-xl font-bold ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
+          {language === 'zh' ? '创建活动' : 'Create Activity'}
+        </div>
+        <div className="w-10" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Title */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {language === 'zh' ? '活动标题 *' : 'Title *'}
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={language === 'zh' ? '输入活动标题' : 'Enter activity title'}
+            className={`w-full px-4 py-3 rounded-xl border transition-all ${
+              darkMode 
+                ? "bg-slate-800 border-slate-700 text-slate-200" 
+                : "bg-white border-slate-200 text-slate-800"
+            } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          />
+        </div>
+
+        {/* Category */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {language === 'zh' ? '活动类别' : 'Category'}
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setCategory(cat.id)}
+                className={`py-3 rounded-xl font-medium transition-all ${
+                  category === cat.id
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                    : darkMode
+                    ? "bg-slate-800 text-slate-300 border border-slate-700"
+                    : "bg-white text-slate-700 border border-slate-200"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date and Time */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+              {language === 'zh' ? '日期 *' : 'Date *'}
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                darkMode 
+                  ? "bg-slate-800 border-slate-700 text-slate-200" 
+                  : "bg-white border-slate-200 text-slate-800"
+              } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            />
+          </div>
+          <div>
+            <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+              {language === 'zh' ? '时间 *' : 'Time *'}
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                darkMode 
+                  ? "bg-slate-800 border-slate-700 text-slate-200" 
+                  : "bg-white border-slate-200 text-slate-800"
+              } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            />
+          </div>
+        </div>
+
+        {/* Location */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {language === 'zh' ? '地点 *' : 'Location *'}
+          </label>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder={language === 'zh' ? '输入活动地点' : 'Enter location'}
+            className={`w-full px-4 py-3 rounded-xl border transition-all ${
+              darkMode 
+                ? "bg-slate-800 border-slate-700 text-slate-200" 
+                : "bg-white border-slate-200 text-slate-800"
+            } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          />
+        </div>
+
+        {/* Max Participants */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {language === 'zh' ? '最大参与人数' : 'Max Participants'}
+          </label>
+          <input
+            type="number"
+            value={maxParticipants}
+            onChange={(e) => setMaxParticipants(e.target.value)}
+            className={`w-full px-4 py-3 rounded-xl border transition-all ${
+              darkMode 
+                ? "bg-slate-800 border-slate-700 text-slate-200" 
+                : "bg-white border-slate-200 text-slate-800"
+            } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {language === 'zh' ? '活动描述' : 'Description'}
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={language === 'zh' ? '描述一下你的活动...' : 'Describe your activity...'}
+            rows={4}
+            className={`w-full px-4 py-3 rounded-xl border transition-all resize-none ${
+              darkMode 
+                ? "bg-slate-800 border-slate-700 text-slate-200" 
+                : "bg-white border-slate-200 text-slate-800"
+            } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          />
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleCreate}
+          className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg shadow-lg"
+        >
+          {language === 'zh' ? '创建活动' : 'Create Activity'}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* =================== ACTIVITY DETAIL PAGE =================== */
+function ActivityDetailPage({ navigateTo, language = "en", darkMode = false, activityId = "act001" }) {
+  const [isJoined, setIsJoined] = useState(false);
+
+  const activity = {
+    id: 'act001',
+    title: language === 'zh' ? 'AI技术分享讲座' : 'AI Technology Seminar',
+    category: 'lecture',
+    date: '2025-11-05',
+    time: '14:00',
+    location: language === 'zh' ? '图书馆报告厅' : 'Library Hall',
+    participants: 45,
+    maxParticipants: 100,
+    organizer: 'Alice',
+    organizerId: 'u001',
+    avatar: '/Alice.png',
+    description: language === 'zh' 
+      ? '本次讲座将深入探讨人工智能的最新发展趋势，包括大语言模型、计算机视觉和强化学习等前沿技术。我们邀请了业界专家分享实践经验，并设有互动问答环节。适合对AI感兴趣的学生和研究者参加。'
+      : 'This seminar will explore the latest trends in AI, including large language models, computer vision, and reinforcement learning. Industry experts will share practical experiences with Q&A sessions. Suitable for students and researchers interested in AI.',
+    participantsList: [
+      { id: 'u002', username: 'Bob', avatar: '/Bob.png' },
+      { id: 'u003', username: 'Charlie', avatar: '/Charlie.png' },
+      { id: 'u004', username: 'Emma', avatar: '/Emma.png' },
+    ],
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`h-full relative flex flex-col transition-colors duration-500 ${
+        darkMode ? "bg-slate-900" : "bg-slate-50"
+      }`}
+    >
+      {/* Header */}
+      <div className={`flex items-center justify-between px-4 py-3 border-b transition-colors ${
+        darkMode ? "border-slate-700 bg-slate-800" : "border-slate-100 bg-white"
+      }`}>
+        <button onClick={() => navigateTo('activities-list')} className="p-2">
+          <ChevronLeft className={`w-6 h-6 ${darkMode ? "text-slate-300" : "text-slate-600"}`} />
+        </button>
+        <div className={`text-lg font-bold ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
+          {language === 'zh' ? '活动详情' : 'Activity Detail'}
+        </div>
+        <button className="p-2">
+          <Share className={`w-5 h-5 ${darkMode ? "text-slate-400" : "text-slate-600"}`} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pb-28">
+        {/* Activity Info */}
+        <div className="p-6">
+          <h1 className={`text-2xl font-bold mb-4 ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
+            {activity.title}
+          </h1>
+
+          <div className="space-y-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                darkMode ? "bg-indigo-600/20" : "bg-indigo-100"
+              }`}>
+                <Calendar className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  {language === 'zh' ? '时间' : 'Date & Time'}
+                </div>
+                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  {activity.date} {activity.time}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                darkMode ? "bg-emerald-600/20" : "bg-emerald-100"
+              }`}>
+                <Globe className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  {language === 'zh' ? '地点' : 'Location'}
+                </div>
+                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  {activity.location}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                darkMode ? "bg-purple-600/20" : "bg-purple-100"
+              }`}>
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  {language === 'zh' ? '参与人数' : 'Participants'}
+                </div>
+                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  {activity.participants}/{activity.maxParticipants}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Organizer */}
+          <div className={`p-4 rounded-2xl mb-6 ${darkMode ? "bg-slate-800" : "bg-white"}`}>
+            <div className="flex items-center gap-3">
+              <img
+                src={activity.avatar}
+                alt={activity.organizer}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+              <div className="flex-1">
+                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  {language === 'zh' ? '组织者' : 'Organizer'}
+                </div>
+                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  {activity.organizer}
+                </div>
+              </div>
+              <button
+                onClick={() => navigateTo('user-profile', { userId: activity.organizerId })}
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  darkMode ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {language === 'zh' ? '查看' : 'View'}
+              </button>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <h3 className={`text-lg font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+              {language === 'zh' ? '活动介绍' : 'About'}
+            </h3>
+            <p className={`text-sm leading-relaxed ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+              {activity.description}
+            </p>
+          </div>
+
+          {/* Participants */}
+          <div className="mt-6">
+            <h3 className={`text-lg font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+              {language === 'zh' ? '参与者' : 'Participants'}
+            </h3>
+            <div className="flex -space-x-2">
+              {activity.participantsList.map((p) => (
+                <img
+                  key={p.id}
+                  src={p.avatar}
+                  alt={p.username}
+                  className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                />
+              ))}
+              {activity.participants > 3 && (
+                <div className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-xs font-semibold ${
+                  darkMode ? "bg-slate-700 text-slate-300" : "bg-slate-200 text-slate-600"
+                }`}>
+                  +{activity.participants - 3}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Join Button */}
+      <div className={`absolute bottom-0 left-0 right-0 p-4 border-t ${
+        darkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100"
+      }`}>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setIsJoined(!isJoined)}
+          className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all ${
+            isJoined
+              ? "bg-slate-500 text-white"
+              : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+          }`}
+        >
+          {isJoined 
+            ? (language === 'zh' ? '取消报名' : 'Cancel Registration')
+            : (language === 'zh' ? '立即报名' : 'Join Now')}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* =================== PROFILE (MINE) =================== */
 function ProfilePage({ navigateTo, language = "en", darkMode = false }) {
   const [showQRCode, setShowQRCode] = useState(false);
@@ -5178,6 +7255,84 @@ function ProfilePage({ navigateTo, language = "en", darkMode = false }) {
           >
             <Sparkles className="w-5 h-5 text-amber-300" />
           </motion.div>
+        </motion.div>
+
+        {/* Live Streaming Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+          className="mb-6"
+        >
+          {isPro ? (
+            // Pro User: Can access live streaming
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigateTo('live-stream-setup')}
+              className={`rounded-2xl p-4 cursor-pointer shadow-lg relative overflow-hidden ${
+                darkMode ? "bg-gradient-to-br from-pink-900/50 to-purple-900/50 border border-pink-700/30" : "bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                  darkMode ? "bg-pink-500/20" : "bg-pink-500/10"
+                }`}>
+                  <Radio className="w-6 h-6 text-pink-500" />
+                </div>
+                <div className="flex-1">
+                  <div className={`font-bold mb-1 flex items-center gap-2 ${
+                    darkMode ? "text-pink-300" : "text-pink-700"
+                  }`}>
+                    <span>{t("myLiveStream", language)}</span>
+                    <ProBadge size="xs" />
+                  </div>
+                  <div className={`text-sm ${
+                    darkMode ? "text-pink-400/70" : "text-pink-600/70"
+                  }`}>
+                    {t("startLiveStream", language)}
+                  </div>
+                </div>
+                <ChevronRight className={`w-5 h-5 ${
+                  darkMode ? "text-pink-400" : "text-pink-500"
+                }`} />
+              </div>
+            </motion.div>
+          ) : (
+            // Non-Pro User: Locked live streaming
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigateTo('pro-upgrade')}
+              className={`rounded-2xl p-4 cursor-pointer shadow-lg relative overflow-hidden ${
+                darkMode ? "bg-slate-800 border border-slate-700" : "bg-slate-100 border border-slate-200"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative ${
+                  darkMode ? "bg-slate-700" : "bg-slate-200"
+                }`}>
+                  <Radio className={`w-6 h-6 ${darkMode ? "text-slate-500" : "text-slate-400"}`} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Lock className={`w-5 h-5 ${darkMode ? "text-slate-400" : "text-slate-500"}`} />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className={`font-bold mb-1 flex items-center gap-2 ${
+                    darkMode ? "text-slate-400" : "text-slate-600"
+                  }`}>
+                    <span>{t("liveBlocked", language)}</span>
+                  </div>
+                  <div className={`text-sm ${
+                    darkMode ? "text-slate-500" : "text-slate-500"
+                  }`}>
+                    {t("liveBlockedDesc", language)}
+                  </div>
+                </div>
+                <Crown className={`w-5 h-5 ${darkMode ? "text-amber-500/50" : "text-amber-500/70"}`} />
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Tabs */}
@@ -5853,119 +8008,623 @@ function QRCodeModal({ userId, username, onClose, language, darkMode }) {
 
 /* =================== EARTH (MAP) =================== */
 function EarthMapPage({ navigateTo, language = "en", darkMode = false }) {
+  const [buildingUserCounts, setBuildingUserCounts] = useState({});
+  const [mapScale, setMapScale] = useState(1);
+  const [mapPosition, setMapPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const mapRef = React.useRef(null);
+
+  useEffect(() => {
+    // 获取所有建筑的用户数量
+    const counts = BuildingChatService.getAllBuildingsUserCount();
+    setBuildingUserCounts(counts);
+    
+    // 每10秒更新一次
+    const interval = setInterval(() => {
+      const newCounts = BuildingChatService.getAllBuildingsUserCount();
+      setBuildingUserCounts(newCounts);
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // 西浦太仓校园主要建筑（根据实际地图位置精确定位）
   const landmarks = [
-    {
-      id: "lib01",
-      name: t("library", language),
-      icon: <Library className="w-5 h-5" />,
-      position: "left-20 top-40",
-      color: "from-blue-500 to-blue-400"
-    },
-    {
-      id: "gym01",
-      name: t("sportsCenter", language),
-      icon: <Dumbbell className="w-5 h-5" />,
-      position: "right-16 top-64",
-      color: "from-emerald-500 to-emerald-400"
-    }
+    // A区 - 左上角
+    { id: "building_a", name: language === 'zh' ? "A栋 - CHIPS" : "Building A - CHIPS", icon: <Library className="w-4 h-4" />, position: { x: 35, y: 18 }, color: "from-purple-500 to-purple-400" },
+    
+    // B区 - 中间偏左上
+    { id: "building_b", name: language === 'zh' ? "B栋 - 学者空间" : "Building B - Scholar Space", icon: <Library className="w-4 h-4" />, position: { x: 45, y: 40 }, color: "from-blue-500 to-blue-400" },
+    
+    // C区 - 左上偏中
+    { id: "building_c", name: language === 'zh' ? "C栋 - 创新工坊" : "Building C - Innovation Factory", icon: <Sparkles className="w-4 h-4" />, position: { x: 50, y: 25 }, color: "from-indigo-500 to-indigo-400" },
+    
+    // D区 - 中心位置
+    { id: "building_d", name: language === 'zh' ? "D栋 - 图书馆" : "Building D - Library", icon: <Library className="w-4 h-4" />, position: { x: 60, y: 45 }, color: "from-teal-500 to-teal-400" },
+    
+    // E区 - 右侧
+    { id: "building_e", name: language === 'zh' ? "E栋 - 产融创学院" : "Building E - IFB", icon: <Briefcase className="w-4 h-4" />, position: { x: 72, y: 50 }, color: "from-green-500 to-green-400" },
+    
+    // F区 - 中下方
+    { id: "building_f", name: language === 'zh' ? "F栋 - 中西餐厅" : "Building F - Restaurant", icon: <Dumbbell className="w-4 h-4" />, position: { x: 53, y: 62 }, color: "from-red-500 to-red-400" },
+    
+    // G区 - 右下方
+    { id: "building_g", name: language === 'zh' ? "G栋 - 影视学院" : "Building G - AFCT", icon: <Tv className="w-4 h-4" />, position: { x: 75, y: 62 }, color: "from-yellow-500 to-yellow-400" },
+    
+    // S栋 - 体育场（底部偏左）
+    { id: "building_s", name: language === 'zh' ? "S栋 - 体育场" : "Building S - Sports Ground", icon: <Dumbbell className="w-4 h-4" />, position: { x: 48, y: 68 }, color: "from-emerald-500 to-emerald-400" },
+    
+    // M栋 - 体育馆（底部中间）
+    { id: "building_m", name: language === 'zh' ? "M栋 - 体育馆" : "Building M - Stadium", icon: <Dumbbell className="w-4 h-4" />, position: { x: 52, y: 72 }, color: "from-lime-500 to-lime-400" },
   ];
+
+  const handleEnterBuilding = (buildingId) => {
+    navigateTo('building-chat', { buildingId });
+  };
+
+  const handleZoomIn = () => {
+    setMapScale(prev => Math.min(prev + 0.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setMapScale(prev => Math.max(prev - 0.2, 0.5));
+  };
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - mapPosition.x, y: e.clientY - mapPosition.y });
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setMapPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragStart({ x: touch.clientX - mapPosition.x, y: touch.clientY - mapPosition.y });
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDragging && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setMapPosition({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
 
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 1.1 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="h-full relative bg-slate-100"
+      className={`h-full relative ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}
     >
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={handleZoomIn}
+          className={`p-3 rounded-lg shadow-lg transition-colors ${
+            darkMode ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-700'
+          }`}
+        >
+          <Plus className="w-5 h-5" />
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={handleZoomOut}
+          className={`p-3 rounded-lg shadow-lg transition-colors ${
+            darkMode ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-700'
+          }`}
+        >
+          <Minus className="w-5 h-5" />
+        </motion.button>
+        <div className={`px-3 py-2 rounded-lg shadow-lg text-xs font-semibold ${
+          darkMode ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-700'
+        }`}>
+          {Math.round(mapScale * 100)}%
+        </div>
+      </div>
+
+      {/* Map Title */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className={`px-4 py-2 rounded-xl shadow-lg ${
+          darkMode ? 'bg-slate-800/90 border border-slate-700' : 'bg-white/90 border border-slate-200'
+        }`}>
+          <div className={`text-sm font-bold ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
+            {language === 'zh' ? 'XJTLU 太仓校园地图' : 'XJTLU Taicang Campus Map'}
+          </div>
+          <div className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+            {language === 'zh' ? '点击建筑进入聊天室' : 'Click buildings to enter'}
+          </div>
+        </div>
+      </div>
       
       {/* Map Container */}
-      <div className="h-full w-full relative overflow-hidden">
-        {/* Stylized Campus Map Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 via-indigo-100 to-sky-100" />
-        <div className="absolute inset-0 opacity-40"
-             style={{ 
-               backgroundImage: `
-                 radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 0px, rgba(255,255,255,0.6) 80px, transparent 120px),
-                 radial-gradient(circle at 80% 70%, rgba(255,255,255,0.6) 0px, rgba(255,255,255,0.6) 80px, transparent 120px),
-                 radial-gradient(circle at 40% 80%, rgba(34, 197, 94, 0.1) 0px, rgba(34, 197, 94, 0.1) 60px, transparent 100px),
-                 radial-gradient(circle at 70% 20%, rgba(59, 130, 246, 0.1) 0px, rgba(59, 130, 246, 0.1) 60px, transparent 100px)
-               ` 
-             }} 
-        />
-        
-        {/* Campus Buildings/Areas Representation */}
-        <div className="absolute left-12 top-32 w-16 h-20 rounded-lg bg-white/60 border-2 border-slate-200 shadow-lg" />
-        <div className="absolute right-10 top-56 w-20 h-16 rounded-lg bg-white/60 border-2 border-slate-200 shadow-lg" />
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-32 w-24 h-12 rounded-lg bg-white/60 border-2 border-slate-200 shadow-lg" />
-        
-        {/* Landmarks with Info Popups */}
-        {landmarks.map((landmark, index) => (
-          <motion.div
-            key={landmark.id}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 + index * 0.2 }}
-            className={`absolute ${landmark.position} flex items-center gap-2 p-3 rounded-xl bg-white/95 backdrop-blur shadow-lg border border-slate-200`}
-          >
-            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${landmark.color} flex items-center justify-center text-white shadow`}>
-              {landmark.icon}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-800">{landmark.name}</span>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="text-xs px-3 py-1 rounded-full bg-indigo-600 text-white shadow hover:bg-indigo-700 transition-colors"
-              >
-                {t("enter", language)}
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
-        
-        {/* User Avatar */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
+      <div 
+        ref={mapRef}
+        className="h-full w-full relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div 
+          className="absolute inset-0 transition-transform duration-200"
+          style={{
+            transform: `translate(${mapPosition.x}px, ${mapPosition.y}px) scale(${mapScale})`,
+            transformOrigin: 'center center'
+          }}
         >
-          <motion.div
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-400 shadow-lg border-2 border-white"
-          />
-          <div className="mt-2 text-xs bg-white/90 backdrop-blur px-3 py-1 rounded-full border border-slate-200 shadow">
-            {t("tapToMove", language)}
+          {/* Campus Map Background - Stylized View */}
+          <div className={`absolute inset-0 ${
+            darkMode 
+              ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900' 
+              : 'bg-gradient-to-br from-emerald-100 via-indigo-100 to-sky-100'
+          }`}>
+            {/* Grid Pattern */}
+            <div 
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: `
+                  linear-gradient(${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px),
+                  linear-gradient(90deg, ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px)
+                `,
+                backgroundSize: '40px 40px'
+              }}
+            />
+            {/* Central Circle */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80">
+              <div className={`w-full h-full rounded-full border-8 ${
+                darkMode ? 'border-slate-600/50' : 'border-slate-300/50'
+              }`} />
+            </div>
           </div>
-        </motion.div>
-        
-        {/* Virtual Joystick */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7 }}
-          className="absolute bottom-8 left-8 w-24 h-24 rounded-full bg-white/80 backdrop-blur border border-slate-200 shadow-lg flex items-center justify-center"
-        >
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-500 shadow"
-          />
-        </motion.div>
-        
-        {/* Campus Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="absolute top-4 left-4 p-3 rounded-xl bg-white/90 backdrop-blur shadow-lg border border-slate-200"
-        >
-          <div className="text-sm font-semibold text-slate-800">{t("campusMap", language)}</div>
-          <div className="text-xs text-slate-500">{t("interactiveMap", language)}</div>
-        </motion.div>
+          
+          {/* Landmarks with Info Popups */}
+          {landmarks.map((landmark, index) => {
+            const userCount = buildingUserCounts[landmark.id] || 0;
+            return (
+              <motion.div
+                key={landmark.id}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
+                className="absolute"
+                style={{
+                  left: `${landmark.position.x}%`,
+                  top: `${landmark.position.y}%`,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className={`flex items-center gap-2 p-2 rounded-xl backdrop-blur shadow-lg border cursor-pointer ${
+                    darkMode 
+                      ? 'bg-slate-800/95 border-slate-700' 
+                      : 'bg-white/95 border-slate-200'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${landmark.color} flex items-center justify-center text-white shadow relative`}>
+                    {landmark.icon}
+                    {userCount > 0 && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center font-bold">
+                        {userCount}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`text-xs font-semibold whitespace-nowrap ${
+                      darkMode ? 'text-slate-200' : 'text-slate-800'
+                    }`}>
+                      {landmark.name}
+                    </span>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEnterBuilding(landmark.id);
+                      }}
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 text-white shadow hover:bg-indigo-700 transition-colors mt-1"
+                    >
+                      {t("enter", language)} {userCount > 0 && `(${userCount})`}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
       
       <BottomNav active="earth" navigateTo={navigateTo} language={language} darkMode={darkMode} />
+    </motion.div>
+  );
+}
+
+/* =================== BUILDING CHAT ROOM =================== */
+function BuildingChatRoom({ navigateTo, language = "en", darkMode = false, buildingId = "lib01" }) {
+  const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [showGameMenu, setShowGameMenu] = useState(false);
+  const messagesEndRef = React.useRef(null);
+
+  const currentUser = {
+    userId: localStorage.getItem('seer_user_id') || 'demo_user',
+    username: localStorage.getItem('seer_username') || '访客',
+    avatar: localStorage.getItem('seer_avatar') || '/Alice.png'
+  };
+
+  const buildingNames = {
+    // 主要建筑 A-G + S + M
+    building_a: { zh: 'A栋 - CHIPS', en: 'Building A - CHIPS' },
+    building_b: { zh: 'B栋 - 学者空间', en: 'Building B - Scholar Space' },
+    building_c: { zh: 'C栋 - 创新工坊', en: 'Building C - Innovation Factory' },
+    building_d: { zh: 'D栋 - 图书馆', en: 'Building D - Library' },
+    building_e: { zh: 'E栋 - 产融创学院', en: 'Building E - IFB' },
+    building_f: { zh: 'F栋 - 中西餐厅', en: 'Building F - Restaurant' },
+    building_g: { zh: 'G栋 - 影视学院', en: 'Building G - AFCT' },
+    building_s: { zh: 'S栋 - 体育场', en: 'Building S - Sports Ground' },
+    building_m: { zh: 'M栋 - 体育馆', en: 'Building M - Stadium' },
+  };
+
+  const buildingName = buildingNames[buildingId]?.[language] || buildingId;
+
+  useEffect(() => {
+    // 进入建筑
+    BuildingChatService.enterBuilding(
+      buildingId,
+      currentUser.userId,
+      currentUser.username,
+      currentUser.avatar
+    );
+
+    // 加载消息和用户
+    loadMessages();
+    loadUsers();
+
+    // 定期更新
+    const interval = setInterval(() => {
+      loadMessages();
+      loadUsers();
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      // 离开建筑
+      BuildingChatService.leaveBuilding(buildingId, currentUser.userId, currentUser.username);
+    };
+  }, [buildingId]);
+
+  useEffect(() => {
+    // 自动滚动到底部
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const loadMessages = () => {
+    const msgs = BuildingChatService.getMessages(buildingId);
+    setMessages(msgs);
+  };
+
+  const loadUsers = () => {
+    const usrs = BuildingChatService.getBuildingUsers(buildingId);
+    setUsers(usrs);
+  };
+
+  const handleSendMessage = () => {
+    if (!messageInput.trim()) return;
+    
+    BuildingChatService.sendMessage(
+      buildingId,
+      currentUser.userId,
+      currentUser.username,
+      currentUser.avatar,
+      messageInput,
+      'text'
+    );
+    
+    setMessageInput('');
+    loadMessages();
+  };
+
+  const handleSendGameInvite = (gameName, gameType) => {
+    const roomCode = `${gameType}_${Date.now()}`;
+    BuildingChatService.sendGameInvite(
+      buildingId,
+      currentUser.userId,
+      currentUser.username,
+      currentUser.avatar,
+      gameName,
+      gameType,
+      roomCode
+    );
+    setShowGameMenu(false);
+    loadMessages();
+  };
+
+  const handleJoinGame = (gameType, roomCode) => {
+    // 导航到游戏页面
+    if (gameType === 'gomoku') {
+      navigateTo('gomoku-loading', { mode: 'matchmaking' });
+    } else if (gameType === 'chess') {
+      navigateTo('chess-loading', { mode: 'matchmaking' });
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString(language === 'zh' ? 'zh-CN' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`h-full flex flex-col transition-colors duration-500 ${
+        darkMode ? 'bg-slate-900' : 'bg-slate-50'
+      }`}
+    >
+      {/* Header */}
+      <div className={`flex items-center gap-3 px-4 py-3 border-b transition-colors ${
+        darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-100 bg-white'
+      }`}>
+        <button
+          onClick={() => navigateTo('earth')}
+          className={`p-2 -ml-2 rounded-lg transition-colors ${
+            darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-50'
+          }`}
+        >
+          <ChevronLeft className={`w-6 h-6 transition-colors ${darkMode ? 'text-slate-300' : 'text-slate-600'}`} />
+        </button>
+        <div className="flex-1">
+          <div className={`text-lg font-bold transition-colors ${
+            darkMode ? 'text-indigo-400' : 'text-indigo-600'
+          }`}>
+            {buildingName}
+          </div>
+          <div className={`text-xs transition-colors ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+            <Users className="w-3 h-3 inline" /> {users.length} {language === 'zh' ? '人在线' : 'online'}
+          </div>
+        </div>
+        <button
+          onClick={() => setShowGameMenu(!showGameMenu)}
+          className={`p-2 rounded-lg transition-colors ${
+            darkMode ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-50 text-slate-600'
+          }`}
+        >
+          <Gamepad2 className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Game Menu */}
+      <AnimatePresence>
+        {showGameMenu && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className={`overflow-hidden border-b ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-100 bg-white'}`}
+          >
+            <div className="p-4 space-y-2">
+              <div className={`text-sm font-semibold mb-2 ${darkMode ? 'text-slate-200' : 'text-slate-700'}`}>
+                {language === 'zh' ? '发送游戏邀请' : 'Send Game Invite'}
+              </div>
+              <button
+                onClick={() => handleSendGameInvite('五子棋', 'gomoku')}
+                className={`w-full p-3 rounded-xl flex items-center gap-3 transition-colors ${
+                  darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-50 hover:bg-slate-100'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                  🎯
+                </div>
+                <div className="text-left flex-1">
+                  <div className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'zh' ? '五子棋' : 'Gomoku'}
+                  </div>
+                  <div className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {language === 'zh' ? '邀请大家一起玩' : 'Invite others to play'}
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => handleSendGameInvite('中国象棋', 'chess')}
+                className={`w-full p-3 rounded-xl flex items-center gap-3 transition-colors ${
+                  darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-50 hover:bg-slate-100'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white">
+                  ♟️
+                </div>
+                <div className="text-left flex-1">
+                  <div className={`font-semibold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'zh' ? '中国象棋' : 'Chinese Chess'}
+                  </div>
+                  <div className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {language === 'zh' ? '邀请大家一起玩' : 'Invite others to play'}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Online Users */}
+      {users.length > 0 && (
+        <div className={`px-4 py-2 border-b ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-100 bg-white'}`}>
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {users.map((user) => (
+              <div key={user.userId} className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-400 flex items-center justify-center text-white text-xs relative overflow-hidden">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                  ) : (
+                    user.username.charAt(0).toUpperCase()
+                  )}
+                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white" />
+                </div>
+                <span className={`text-[10px] max-w-[60px] truncate ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {user.username}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((msg) => {
+          const isMine = msg.userId === currentUser.userId;
+          const isSystem = msg.userId === 'system';
+
+          if (isSystem) {
+            return (
+              <div key={msg.id} className="flex justify-center">
+                <div className={`text-xs px-3 py-1 rounded-full ${
+                  darkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  {msg.content}
+                </div>
+              </div>
+            );
+          }
+
+          if (msg.type === 'game_invite') {
+            return (
+              <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] ${isMine ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                  {!isMine && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-400 flex items-center justify-center text-white text-[10px] overflow-hidden">
+                        {msg.avatar ? (
+                          <img src={msg.avatar} alt={msg.username} className="w-full h-full object-cover" />
+                        ) : (
+                          msg.username.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                        {msg.username}
+                      </span>
+                    </div>
+                  )}
+                  <div className={`p-3 rounded-xl ${
+                    isMine
+                      ? darkMode ? 'bg-indigo-700 text-white' : 'bg-indigo-600 text-white'
+                      : darkMode ? 'bg-slate-700 text-slate-100' : 'bg-white text-slate-800 border border-slate-200'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Gamepad2 className="w-4 h-4" />
+                      <span className="font-semibold">{msg.metadata.gameName}</span>
+                    </div>
+                    <div className="text-sm mb-2">{msg.content}</div>
+                    {!isMine && (
+                      <button
+                        onClick={() => handleJoinGame(msg.metadata.gameType, msg.metadata.roomCode)}
+                        className={`w-full px-3 py-1.5 rounded-lg text-sm font-semibold ${
+                          darkMode ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-indigo-600 hover:bg-indigo-700'
+                        } text-white`}
+                      >
+                        {language === 'zh' ? '加入游戏' : 'Join Game'}
+                      </button>
+                    )}
+                  </div>
+                  <span className={`text-[10px] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {formatTime(msg.timestamp)}
+                  </span>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] ${isMine ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                {!isMine && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-400 flex items-center justify-center text-white text-[10px] overflow-hidden">
+                      {msg.avatar ? (
+                        <img src={msg.avatar} alt={msg.username} className="w-full h-full object-cover" />
+                      ) : (
+                        msg.username.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {msg.username}
+                    </span>
+                  </div>
+                )}
+                <div className={`px-4 py-2 rounded-2xl ${
+                  isMine
+                    ? darkMode ? 'bg-indigo-700 text-white' : 'bg-indigo-600 text-white'
+                    : darkMode ? 'bg-slate-700 text-slate-100' : 'bg-white text-slate-800 border border-slate-200'
+                }`}>
+                  {msg.content}
+                </div>
+                <span className={`text-[10px] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {formatTime(msg.timestamp)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Bar */}
+      <div className={`p-4 border-t transition-colors ${
+        darkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-100 bg-white'
+      }`}>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder={language === 'zh' ? '输入消息...' : 'Type a message...'}
+            className={`flex-1 px-4 py-2 rounded-full outline-none transition-colors ${
+              darkMode
+                ? 'bg-slate-700 text-slate-100 placeholder-slate-400'
+                : 'bg-slate-100 text-slate-800 placeholder-slate-400'
+            }`}
+          />
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSendMessage}
+            className="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+          >
+            <Send className="w-5 h-5" />
+          </motion.button>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -8686,6 +11345,12 @@ const pagesList = [
   { id: "games", label: "Games" },
   { id: "gomoku-lobby", label: "Gomoku Lobby" },
   { id: "gomoku-game", label: "Gomoku Game" },
+  { id: "ai-loading", label: "AI Loading" },
+  { id: "ai-hub", label: "AI Hub" },
+  { id: "ai-chat", label: "AI Chat" },
+  { id: "ai-image", label: "AI Images" },
+  { id: "ai-music", label: "AI Music" },
+  { id: "ai-video", label: "AI Video" },
   { id: "chat", label: "Chat" },
   { id: "chat-detail-c001", label: "Chat - Charlie" },
   { id: "chat-detail-g001", label: "Chat - Project Group" },
@@ -8693,6 +11358,7 @@ const pagesList = [
   { id: "add-friend", label: "Add Friend" },
   { id: "create-post", label: "Create Post" },
   { id: "earth", label: "Map" },
+  { id: "building-chat", label: "Building Chat" },
   { id: "mine", label: "Mine" },
   { id: "settings", label: "Settings" },
   { id: "change-password", label: "Change Password" },
@@ -8703,6 +11369,15 @@ const pagesList = [
   { id: "forgot-password-phone", label: "FP - Phone" },
   { id: "reset-password", label: "Reset Password" },
   { id: "diamond-recharge", label: "Diamond Recharge" },
+  { id: "live-stream-setup", label: "Live Setup" },
+  { id: "live-stream-broadcasting", label: "Live Broadcasting" },
+  { id: "watch-live-stream", label: "Watch Live" },
+  { id: "voice-call", label: "Voice Call" },
+  { id: "video-call", label: "Video Call" },
+  { id: "activities-list", label: "Activities" },
+  { id: "create-activity", label: "Create Activity" },
+  { id: "activity-detail", label: "Activity Detail" },
+  { id: "admin-dashboard", label: "Admin" },
 ];
 
 export default function SEERMockups() {
@@ -8775,6 +11450,20 @@ export default function SEERMockups() {
         return <ChessLobby navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "chess-game":
         return <ChessGameScreen navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
+      case "ai-loading":
+        return <AILoadingScreen navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "ai-hub":
+        return <AIHub navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "ai-chat":
+        return <AIChatScreen navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
+      case "ai-image":
+        return <AIImageScreen navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "ai-music":
+        return <AIMusicScreen navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "ai-video":
+        return <AIVideoScreen navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "admin-dashboard":
+        return <AdminDashboardPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "chat":
         return <ChatPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "chat-detail-c001":
@@ -8797,6 +11486,8 @@ export default function SEERMockups() {
         return <SearchPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "earth":
         return <EarthMapPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "building-chat":
+        return <BuildingChatRoom navigateTo={navigateTo} language={language} darkMode={darkMode} buildingId={gameOptions.buildingId || 'lib01'} />;
       case "mine":
         return <ProfilePage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "settings":
@@ -8821,6 +11512,22 @@ export default function SEERMockups() {
         return <DiamondRechargePage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "member-center":
         return <MemberCenterPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "live-stream-setup":
+        return <LiveStreamSetupPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "live-stream-broadcasting":
+        return <LiveStreamBroadcastingPage navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
+      case "watch-live-stream":
+        return <WatchLiveStreamPage navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
+      case "voice-call":
+        return <VoiceCallPage navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
+      case "video-call":
+        return <VideoCallPage navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
+      case "activities-list":
+        return <ActivitiesListPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "create-activity":
+        return <CreateActivityPage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
+      case "activity-detail":
+        return <ActivityDetailPage navigateTo={navigateTo} language={language} darkMode={darkMode} {...gameOptions} />;
       case "edit-profile":
         return <EditProfilePage navigateTo={navigateTo} language={language} darkMode={darkMode} />;
       case "user-profile":
