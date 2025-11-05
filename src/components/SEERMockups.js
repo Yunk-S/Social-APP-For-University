@@ -145,9 +145,11 @@ const translations = {
     following: "Following",
     new: "New",
     createPost: "Create Post",
+    createMore: "Create More",
     whatsOnYourMind: "What's on your mind?",
     addPhoto: "Add Photo",
     addVideo: "Add Video",
+    addActivity: "Create Activity",
     post: "Post",
     selectImage: "Select Image",
     selectVideo: "Select Video",
@@ -399,6 +401,51 @@ const translations = {
     family: "Family",
     colleagues: "Colleagues",
     classmates: "Classmates",
+    // Activities
+    activities: "Activities",
+    campusActivities: "Campus Activities",
+    createActivity: "Create Activity",
+    activityTitle: "Activity Title",
+    enterActivityTitle: "Enter activity title",
+    activityType: "Activity Type",
+    activityCategory: "Category",
+    activityTags: "Tags",
+    addTags: "Add Tags",
+    activityDate: "Date",
+    activityTime: "Time",
+    activityLocation: "Location",
+    enterLocation: "Enter location",
+    maxParticipants: "Max Participants",
+    activityDescription: "Description",
+    enterDescription: "Enter activity description",
+    participantsCount: "Participants",
+    joinActivity: "Join Activity",
+    leaveActivity: "Leave Activity",
+    activityDetails: "Activity Details",
+    organizer: "Organizer",
+    participantsList: "Participants",
+    activityFull: "Activity Full",
+    activityEnded: "Activity Ended",
+    upcoming: "Upcoming",
+    ongoing: "Ongoing",
+    ended: "Ended",
+    allActivities: "All",
+    lecture: "Lecture",
+    party: "Party",
+    study: "Study",
+    competition: "Competition",
+    workshop: "Workshop",
+    seminar: "Seminar",
+    outdoor: "Outdoor",
+    entertainment: "Entertainment",
+    volunteer: "Volunteer",
+    academic: "Academic",
+    social: "Social",
+    cultural: "Cultural",
+    technology: "Technology",
+    art: "Art",
+    fitness: "Fitness",
+    career: "Career",
     // Live Streaming
     liveStream: "Live Stream",
     myLiveStream: "My Live Stream",
@@ -485,9 +532,11 @@ const translations = {
     following: "关注",
     new: "发布",
     createPost: "创建帖子",
+    createMore: "创建更多",
     whatsOnYourMind: "分享新鲜事...",
     addPhoto: "添加图片",
     addVideo: "添加视频",
+    addActivity: "发起活动",
     post: "发布",
     selectImage: "选择图片",
     selectVideo: "选择视频",
@@ -739,6 +788,51 @@ const translations = {
     family: "家人",
     colleagues: "同事",
     classmates: "同学",
+    // Activities
+    activities: "活动",
+    campusActivities: "校园活动",
+    createActivity: "创建活动",
+    activityTitle: "活动标题",
+    enterActivityTitle: "输入活动标题",
+    activityType: "活动类型",
+    activityCategory: "分类",
+    activityTags: "标签",
+    addTags: "添加标签",
+    activityDate: "日期",
+    activityTime: "时间",
+    activityLocation: "地点",
+    enterLocation: "输入活动地点",
+    maxParticipants: "最大人数",
+    activityDescription: "活动描述",
+    enterDescription: "输入活动描述",
+    participantsCount: "参与人数",
+    joinActivity: "参加活动",
+    leaveActivity: "退出活动",
+    activityDetails: "活动详情",
+    organizer: "组织者",
+    participantsList: "参与者列表",
+    activityFull: "活动已满",
+    activityEnded: "活动已结束",
+    upcoming: "即将开始",
+    ongoing: "进行中",
+    ended: "已结束",
+    allActivities: "全部",
+    lecture: "讲座",
+    party: "聚会",
+    study: "学习",
+    competition: "比赛",
+    workshop: "工作坊",
+    seminar: "研讨会",
+    outdoor: "户外",
+    entertainment: "娱乐",
+    volunteer: "志愿",
+    academic: "学术",
+    social: "社交",
+    cultural: "文化",
+    technology: "科技",
+    art: "艺术",
+    fitness: "健身",
+    career: "职业",
     // Live Streaming
     liveStream: "直播",
     myLiveStream: "我的直播间",
@@ -1659,6 +1753,150 @@ function RegistrationPage({ navigateTo, language = "en", darkMode = false }) {
   );
 }
 
+/* =================== ACTIVITY CARD =================== */
+function ActivityCard({ activity, darkMode = false, navigateTo, language = "en" }) {
+  const [isJoined, setIsJoined] = useState(activity.isJoined || false);
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      lecture: '📚',
+      party: '🎉',
+      sports: '⚽',
+      study: '✏️',
+      competition: '🏆',
+      workshop: '🛠️',
+      seminar: '💡',
+      outdoor: '🏕️',
+      volunteer: '❤️',
+      entertainment: '🎭'
+    };
+    return icons[category] || '📅';
+  };
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      onClick={() => navigateTo('activity-detail', { activityId: activity.id })}
+      className={`rounded-2xl overflow-hidden shadow-sm cursor-pointer transition-all ${
+        darkMode ? "bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-800/50" : "bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200"
+      }`}
+    >
+      {/* Activity Cover */}
+      {activity.coverImage && (
+        <div className="relative h-48 overflow-hidden">
+          <img 
+            src={activity.coverImage} 
+            alt={activity.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1">
+            <span>{getCategoryIcon(activity.category)}</span>
+            <span>{activity.categoryLabel}</span>
+          </div>
+          {isJoined && (
+            <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-green-500 text-white text-xs font-medium">
+              {language === 'zh' ? '已报名' : 'Joined'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Activity Content */}
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-3">
+          <img
+            src={activity.organizerAvatar}
+            alt={activity.organizer}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <div className="flex-1 min-w-0">
+            <div className={`font-semibold text-sm ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+              {activity.organizer}
+            </div>
+            <div className={`text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+              {activity.time}
+            </div>
+          </div>
+        </div>
+
+        {/* Activity Title */}
+        <h3 className={`font-bold text-lg mb-2 ${darkMode ? "text-white" : "text-slate-900"}`}>
+          {activity.title}
+        </h3>
+
+        {/* Activity Info */}
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center gap-2">
+            <Calendar className={`w-4 h-4 ${darkMode ? "text-indigo-400" : "text-indigo-600"}`} />
+            <span className={`text-sm ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+              {activity.date} {activity.time}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Globe className={`w-4 h-4 ${darkMode ? "text-indigo-400" : "text-indigo-600"}`} />
+            <span className={`text-sm ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+              {activity.location}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className={`w-4 h-4 ${darkMode ? "text-indigo-400" : "text-indigo-600"}`} />
+            <span className={`text-sm ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+              {activity.participants}/{activity.maxParticipants} {language === 'zh' ? '人' : 'people'}
+            </span>
+            <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden ml-2">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full transition-all"
+                style={{ width: `${(activity.participants / activity.maxParticipants) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {activity.tags && activity.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {activity.tags.map((tag, index) => (
+              <span
+                key={index}
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  darkMode
+                    ? "bg-indigo-600/30 text-indigo-300"
+                    : "bg-indigo-100 text-indigo-700"
+                }`}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Join Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsJoined(!isJoined);
+          }}
+          className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
+            isJoined
+              ? darkMode
+                ? "bg-slate-700 text-slate-300"
+                : "bg-slate-200 text-slate-700"
+              : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+          }`}
+        >
+          {isJoined 
+            ? language === 'zh' ? '已报名' : 'Joined'
+            : language === 'zh' ? '立即参加' : 'Join Activity'
+          }
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
 /* =================== POST CARD =================== */
 function PostCard({ id, type, content, username, avatar, likes, comments, thumbnail, videoSrc, darkMode = false, major = '', time = '2h ago', isPro = false, userId = 'u001', navigateTo, language = "en" }) {
   const [isLiked, setIsLiked] = useState(false);
@@ -2179,6 +2417,23 @@ function HomePage({ navigateTo, language = "en", darkMode = false }) {
       time: "2h ago"
     },
     {
+      id: "a001",
+      type: "activity",
+      title: language === 'zh' ? 'AI技术分享讲座' : 'AI Technology Seminar',
+      category: 'lecture',
+      categoryLabel: language === 'zh' ? '讲座' : 'Lecture',
+      date: '2025-11-10',
+      time: '14:00',
+      location: language === 'zh' ? '图书馆报告厅' : 'Library Hall',
+      participants: 45,
+      maxParticipants: 100,
+      organizer: 'Alice',
+      organizerAvatar: '/Alice.png',
+      tags: ['AI', language === 'zh' ? '机器学习' : 'Machine Learning', language === 'zh' ? '技术分享' : 'Tech Talk'],
+      isJoined: false,
+      time: '3h ago'
+    },
+    {
       id: "v456",
       type: "video",
       username: "Bob",
@@ -2190,6 +2445,23 @@ function HomePage({ navigateTo, language = "en", darkMode = false }) {
       likes: 150,
       comments: 23,
       time: "4h ago"
+    },
+    {
+      id: "a002",
+      type: "activity",
+      title: language === 'zh' ? '周末篮球友谊赛' : 'Weekend Basketball Match',
+      category: 'sports',
+      categoryLabel: language === 'zh' ? '运动' : 'Sports',
+      date: '2025-11-08',
+      time: '16:00',
+      location: language === 'zh' ? '体育中心篮球场' : 'Sports Center',
+      participants: 12,
+      maxParticipants: 20,
+      organizer: 'Bob',
+      organizerAvatar: '/Bob.png',
+      tags: [language === 'zh' ? '篮球' : 'Basketball', language === 'zh' ? '运动' : 'Sports'],
+      isJoined: true,
+      time: '5h ago'
     },
     {
       id: "p789",
@@ -2214,6 +2486,24 @@ function HomePage({ navigateTo, language = "en", darkMode = false }) {
       likes: 67,
       comments: 8,
       time: "8h ago"
+    },
+    {
+      id: "a003",
+      type: "activity",
+      title: language === 'zh' ? '编程马拉松48小时' : '48-Hour Coding Marathon',
+      category: 'competition',
+      categoryLabel: language === 'zh' ? '比赛' : 'Competition',
+      date: '2025-11-12',
+      time: '09:00',
+      location: language === 'zh' ? '创新实验室' : 'Innovation Lab',
+      participants: 38,
+      maxParticipants: 50,
+      organizer: 'Charlie',
+      organizerAvatar: '/Charlie.png',
+      coverImage: '/gomokuimage.png',
+      tags: [language === 'zh' ? '编程' : 'Coding', language === 'zh' ? '竞赛' : 'Competition', 'Hackathon'],
+      isJoined: false,
+      time: '10h ago'
     },
     {
       id: "p102",
@@ -2317,16 +2607,25 @@ function HomePage({ navigateTo, language = "en", darkMode = false }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <PostCard 
-                {...post} 
-                darkMode={darkMode}
-                major={post.major}
-                time={post.time}
-                isPro={post.isPro}
-                userId={post.userId}
-                navigateTo={navigateTo}
-                language={language}
-              />
+              {post.type === 'activity' ? (
+                <ActivityCard 
+                  activity={post}
+                  darkMode={darkMode}
+                  navigateTo={navigateTo}
+                  language={language}
+                />
+              ) : (
+                <PostCard 
+                  {...post} 
+                  darkMode={darkMode}
+                  major={post.major}
+                  time={post.time}
+                  isPro={post.isPro}
+                  userId={post.userId}
+                  navigateTo={navigateTo}
+                  language={language}
+                />
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -2857,7 +3156,7 @@ function CreatePostPage({ navigateTo, language = "en", darkMode = false }) {
         <div className={`text-xl font-bold tracking-wide transition-colors ${
           darkMode ? "text-indigo-400" : "text-indigo-600"
         }`}>
-          {t("createPost", language)}
+          {t("createMore", language)}
         </div>
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -2966,6 +3265,27 @@ function CreatePostPage({ navigateTo, language = "en", darkMode = false }) {
             <span className="font-medium">{t("addVideo", language)}</span>
           </motion.button>
         </div>
+
+        {/* Activity Creation Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigateTo('create-activity')}
+          className={`mt-4 w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl border-2 border-dashed transition-all ${
+            darkMode
+              ? "bg-slate-800/50 border-indigo-500/50 text-indigo-400 hover:bg-slate-800 hover:border-indigo-500"
+              : "bg-indigo-50/50 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-400"
+          }`}
+        >
+          <Calendar className="w-6 h-6" />
+          <div className="text-left">
+            <div className="font-bold text-base">{t("addActivity", language)}</div>
+            <div className={`text-xs ${darkMode ? "text-slate-400" : "text-indigo-500"}`}>
+              {language === 'zh' ? '组织校园活动，邀请好友参加' : 'Organize campus events and invite friends'}
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 ml-auto" />
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -6642,18 +6962,60 @@ function ActivitiesListPage({ navigateTo, language = "en", darkMode = false }) {
 function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('lecture');
+  const [activityType, setActivityType] = useState('offline');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [location, setLocation] = useState('');
   const [maxParticipants, setMaxParticipants] = useState('50');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isPublic, setIsPublic] = useState(true);
+  const [requireApproval, setRequireApproval] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   const categories = [
-    { id: 'lecture', label: language === 'zh' ? '讲座' : 'Lecture' },
-    { id: 'party', label: language === 'zh' ? '聚会' : 'Party' },
-    { id: 'sports', label: language === 'zh' ? '运动' : 'Sports' },
-    { id: 'study', label: language === 'zh' ? '学习' : 'Study' },
+    { id: 'lecture', label: t('lecture', language), icon: '📚' },
+    { id: 'party', label: t('party', language), icon: '🎉' },
+    { id: 'sports', label: t('sports', language), icon: '⚽' },
+    { id: 'study', label: t('study', language), icon: '✏️' },
+    { id: 'competition', label: t('competition', language), icon: '🏆' },
+    { id: 'workshop', label: t('workshop', language), icon: '🛠️' },
+    { id: 'seminar', label: t('seminar', language), icon: '💡' },
+    { id: 'outdoor', label: t('outdoor', language), icon: '🏕️' },
+    { id: 'volunteer', label: t('volunteer', language), icon: '❤️' },
+    { id: 'entertainment', label: t('entertainment', language), icon: '🎭' },
   ];
+
+  const activityTypes = [
+    { id: 'offline', label: language === 'zh' ? '线下活动' : 'Offline Event', icon: <Globe className="w-5 h-5" /> },
+    { id: 'online', label: language === 'zh' ? '线上活动' : 'Online Event', icon: <Tv className="w-5 h-5" /> },
+    { id: 'hybrid', label: language === 'zh' ? '线上线下' : 'Hybrid', icon: <Zap className="w-5 h-5" /> },
+  ];
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addTag = () => {
+    if (tagInput.trim() && tags.length < 5 && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
 
   const handleCreate = () => {
     if (!title || !date || !time || !location) {
@@ -6704,26 +7066,88 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
           />
         </div>
 
+        {/* Activity Image */}
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative rounded-xl overflow-hidden"
+          >
+            <img src={selectedImage} alt="Activity" className="w-full h-48 object-cover" />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-2 right-2 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => fileInputRef.current?.click()}
+          className={`w-full py-3 rounded-xl border-2 border-dashed font-medium transition-all ${
+            darkMode
+              ? "border-slate-700 text-slate-400 hover:border-indigo-500 hover:text-indigo-400"
+              : "border-slate-300 text-slate-600 hover:border-indigo-400 hover:text-indigo-600"
+          }`}
+        >
+          <div className="flex items-center justify-center gap-2">
+            <Image className="w-5 h-5" />
+            <span>{language === 'zh' ? '添加活动封面' : 'Add Cover Image'}</span>
+          </div>
+        </motion.button>
+
         {/* Category */}
         <div>
           <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-            {language === 'zh' ? '活动类别' : 'Category'}
+            {t('activityCategory', language)} *
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {categories.map((cat) => (
-              <button
+              <motion.button
                 key={cat.id}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setCategory(cat.id)}
-                className={`py-3 rounded-xl font-medium transition-all ${
+                className={`py-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-1 ${
                   category === cat.id
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
+                    : darkMode
+                    ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-indigo-500"
+                    : "bg-white text-slate-700 border border-slate-200 hover:border-indigo-400"
+                }`}
+              >
+                <span className="text-xl">{cat.icon}</span>
+                <span>{cat.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Activity Type */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {t('activityType', language)} *
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {activityTypes.map((type) => (
+              <motion.button
+                key={type.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActivityType(type.id)}
+                className={`py-3 rounded-xl font-medium transition-all text-sm flex flex-col items-center gap-1 ${
+                  activityType === type.id
+                    ? "bg-indigo-600 text-white"
                     : darkMode
                     ? "bg-slate-800 text-slate-300 border border-slate-700"
                     : "bg-white text-slate-700 border border-slate-200"
                 }`}
               >
-                {cat.label}
-              </button>
+                {type.icon}
+                <span className="text-xs">{type.label}</span>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -6732,7 +7156,7 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-              {language === 'zh' ? '日期 *' : 'Date *'}
+              {t('activityDate', language)} *
             </label>
             <input
               type="date"
@@ -6747,7 +7171,7 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
           </div>
           <div>
             <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-              {language === 'zh' ? '时间 *' : 'Time *'}
+              {t('activityTime', language)} *
             </label>
             <input
               type="time"
@@ -6762,20 +7186,37 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
           </div>
         </div>
 
+        {/* End Time */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {language === 'zh' ? '结束时间 (可选)' : 'End Time (Optional)'}
+          </label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className={`w-full px-4 py-3 rounded-xl border transition-all ${
+              darkMode 
+                ? "bg-slate-800 border-slate-700 text-slate-200" 
+                : "bg-white border-slate-200 text-slate-800"
+            } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+          />
+        </div>
+
         {/* Location */}
         <div>
           <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-            {language === 'zh' ? '地点 *' : 'Location *'}
+            {t('activityLocation', language)} *
           </label>
           <input
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder={language === 'zh' ? '输入活动地点' : 'Enter location'}
+            placeholder={t('enterLocation', language)}
             className={`w-full px-4 py-3 rounded-xl border transition-all ${
               darkMode 
-                ? "bg-slate-800 border-slate-700 text-slate-200" 
-                : "bg-white border-slate-200 text-slate-800"
+                ? "bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500" 
+                : "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
             } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
           />
         </div>
@@ -6783,12 +7224,14 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
         {/* Max Participants */}
         <div>
           <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-            {language === 'zh' ? '最大参与人数' : 'Max Participants'}
+            {t('maxParticipants', language)} *
           </label>
           <input
             type="number"
             value={maxParticipants}
             onChange={(e) => setMaxParticipants(e.target.value)}
+            min="1"
+            max="1000"
             className={`w-full px-4 py-3 rounded-xl border transition-all ${
               darkMode 
                 ? "bg-slate-800 border-slate-700 text-slate-200" 
@@ -6797,22 +7240,123 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
           />
         </div>
 
+        {/* Tags */}
+        <div>
+          <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+            {t('activityTags', language)} ({tags.length}/5)
+          </label>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+              placeholder={language === 'zh' ? '输入标签后按回车' : 'Enter tag and press Enter'}
+              disabled={tags.length >= 5}
+              className={`flex-1 px-4 py-2 rounded-xl border transition-all ${
+                darkMode 
+                  ? "bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500" 
+                  : "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
+              } focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50`}
+            />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={addTag}
+              disabled={tags.length >= 5 || !tagInput.trim()}
+              className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {language === 'zh' ? '添加' : 'Add'}
+            </motion.button>
+          </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                    darkMode
+                      ? "bg-indigo-600/20 text-indigo-400"
+                      : "bg-indigo-100 text-indigo-700"
+                  }`}
+                >
+                  <span>#{tag}</span>
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="hover:opacity-70 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Description */}
         <div>
           <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
-            {language === 'zh' ? '活动描述' : 'Description'}
+            {t('activityDescription', language)} *
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={language === 'zh' ? '描述一下你的活动...' : 'Describe your activity...'}
-            rows={4}
+            placeholder={t('enterDescription', language)}
+            rows={5}
             className={`w-full px-4 py-3 rounded-xl border transition-all resize-none ${
               darkMode 
-                ? "bg-slate-800 border-slate-700 text-slate-200" 
-                : "bg-white border-slate-200 text-slate-800"
+                ? "bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500" 
+                : "bg-white border-slate-200 text-slate-800 placeholder-slate-400"
             } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
           />
+        </div>
+
+        {/* Settings */}
+        <div className={`rounded-xl p-4 ${darkMode ? "bg-slate-800" : "bg-slate-100"}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className={`font-medium ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                {language === 'zh' ? '公开活动' : 'Public Activity'}
+              </div>
+              <div className={`text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                {language === 'zh' ? '所有人都可以看到和加入' : 'Everyone can see and join'}
+              </div>
+            </div>
+            <button
+              onClick={() => setIsPublic(!isPublic)}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                isPublic ? "bg-indigo-600" : darkMode ? "bg-slate-700" : "bg-slate-300"
+              }`}
+            >
+              <motion.div
+                animate={{ x: isPublic ? 24 : 0 }}
+                className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow"
+              />
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`font-medium ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                {language === 'zh' ? '需要审批' : 'Require Approval'}
+              </div>
+              <div className={`text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                {language === 'zh' ? '报名需要组织者审批' : 'Registration needs approval'}
+              </div>
+            </div>
+            <button
+              onClick={() => setRequireApproval(!requireApproval)}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                requireApproval ? "bg-indigo-600" : darkMode ? "bg-slate-700" : "bg-slate-300"
+              }`}
+            >
+              <motion.div
+                animate={{ x: requireApproval ? 24 : 0 }}
+                className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow"
+              />
+            </button>
+          </div>
         </div>
 
         <motion.button
@@ -6831,26 +7375,51 @@ function CreateActivityPage({ navigateTo, language = "en", darkMode = false }) {
 /* =================== ACTIVITY DETAIL PAGE =================== */
 function ActivityDetailPage({ navigateTo, language = "en", darkMode = false, activityId = "act001" }) {
   const [isJoined, setIsJoined] = useState(false);
+  const [activeTab, setActiveTab] = useState('about');
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   const activity = {
     id: 'act001',
     title: language === 'zh' ? 'AI技术分享讲座' : 'AI Technology Seminar',
     category: 'lecture',
-    date: '2025-11-05',
+    categoryIcon: '📚',
+    categoryLabel: language === 'zh' ? '讲座' : 'Lecture',
+    date: '2025-11-10',
     time: '14:00',
+    endTime: '16:30',
     location: language === 'zh' ? '图书馆报告厅' : 'Library Hall',
     participants: 45,
     maxParticipants: 100,
     organizer: 'Alice',
     organizerId: 'u001',
+    organizerMajor: 'Computer Science',
     avatar: '/Alice.png',
+    coverImage: '/chessimage.png',
+    tags: ['AI', language === 'zh' ? '机器学习' : 'Machine Learning', language === 'zh' ? '技术' : 'Tech'],
     description: language === 'zh' 
       ? '本次讲座将深入探讨人工智能的最新发展趋势，包括大语言模型、计算机视觉和强化学习等前沿技术。我们邀请了业界专家分享实践经验，并设有互动问答环节。适合对AI感兴趣的学生和研究者参加。'
       : 'This seminar will explore the latest trends in AI, including large language models, computer vision, and reinforcement learning. Industry experts will share practical experiences with Q&A sessions. Suitable for students and researchers interested in AI.',
+    requirements: language === 'zh' 
+      ? ['对AI/ML有基本了解', '自带笔记本电脑', '准时到场']
+      : ['Basic understanding of AI/ML', 'Bring your laptop', 'Arrive on time'],
+    agenda: language === 'zh'
+      ? [
+          { time: '14:00-14:30', title: '签到与开场' },
+          { time: '14:30-15:30', title: 'AI最新趋势分享' },
+          { time: '15:30-16:00', title: '互动讨论' },
+          { time: '16:00-16:30', title: '问答环节' }
+        ]
+      : [
+          { time: '14:00-14:30', title: 'Check-in & Opening' },
+          { time: '14:30-15:30', title: 'Latest AI Trends' },
+          { time: '15:30-16:00', title: 'Interactive Discussion' },
+          { time: '16:00-16:30', title: 'Q&A Session' }
+        ],
     participantsList: [
-      { id: 'u002', username: 'Bob', avatar: '/Bob.png' },
-      { id: 'u003', username: 'Charlie', avatar: '/Charlie.png' },
-      { id: 'u004', username: 'Emma', avatar: '/Emma.png' },
+      { id: 'u002', username: 'Bob', avatar: '/Bob.png', major: 'Data Science' },
+      { id: 'u003', username: 'Charlie', avatar: '/Charlie.png', major: 'Computer Science' },
+      { id: 'u004', username: 'Emma', avatar: '/Emma.png', major: 'AI Engineering' },
+      { id: 'u005', username: 'Dana', avatar: '/Dana.png', major: 'Computer Science' },
     ],
   };
 
@@ -6862,160 +7431,392 @@ function ActivityDetailPage({ navigateTo, language = "en", darkMode = false, act
         darkMode ? "bg-slate-900" : "bg-slate-50"
       }`}
     >
-      {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 border-b transition-colors ${
-        darkMode ? "border-slate-700 bg-slate-800" : "border-slate-100 bg-white"
-      }`}>
-        <button onClick={() => navigateTo('activities-list')} className="p-2">
-          <ChevronLeft className={`w-6 h-6 ${darkMode ? "text-slate-300" : "text-slate-600"}`} />
-        </button>
-        <div className={`text-lg font-bold ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
-          {language === 'zh' ? '活动详情' : 'Activity Detail'}
-        </div>
-        <button className="p-2">
-          <Share className={`w-5 h-5 ${darkMode ? "text-slate-400" : "text-slate-600"}`} />
-        </button>
+      {/* Header with Cover Image */}
+      <div className="relative">
+        {activity.coverImage && (
+          <div className="relative h-56 overflow-hidden">
+            <img 
+              src={activity.coverImage} 
+              alt={activity.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+            
+            {/* Header Buttons */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3">
+              <motion.button 
+                whileTap={{ scale: 0.9 }}
+                onClick={() => navigateTo('home')} 
+                className="p-2 rounded-full bg-black/30 backdrop-blur-sm"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </motion.button>
+              <div className="flex gap-2">
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowShareSheet(true)}
+                  className="p-2 rounded-full bg-black/30 backdrop-blur-sm"
+                >
+                  <Share className="w-5 h-5 text-white" />
+                </motion.button>
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  className="p-2 rounded-full bg-black/30 backdrop-blur-sm"
+                >
+                  <Bookmark className="w-5 h-5 text-white" />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Category Badge */}
+            <div className="absolute top-16 left-4">
+              <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium flex items-center gap-1">
+                <span>{activity.categoryIcon}</span>
+                <span>{activity.categoryLabel}</span>
+              </div>
+            </div>
+
+            {/* Status Badge */}
+            {isJoined && (
+              <div className="absolute top-16 right-4">
+                <div className="px-3 py-1 rounded-full bg-green-500 text-white text-sm font-medium">
+                  {language === 'zh' ? '✓ 已报名' : '✓ Joined'}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto pb-28">
-        {/* Activity Info */}
-        <div className="p-6">
-          <h1 className={`text-2xl font-bold mb-4 ${darkMode ? "text-slate-100" : "text-slate-800"}`}>
+        {/* Title and Quick Info */}
+        <div className="px-6 pt-6 pb-4">
+          <h1 className={`text-2xl font-bold mb-4 ${darkMode ? "text-slate-100" : "text-slate-900"}`}>
             {activity.title}
           </h1>
 
-          <div className="space-y-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                darkMode ? "bg-indigo-600/20" : "bg-indigo-100"
-              }`}>
-                <Calendar className="w-6 h-6 text-indigo-600" />
+          {/* Tags */}
+          {activity.tags && activity.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {activity.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    darkMode
+                      ? "bg-indigo-600/20 text-indigo-300"
+                      : "bg-indigo-100 text-indigo-700"
+                  }`}
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className={`p-3 rounded-xl text-center ${darkMode ? "bg-slate-800" : "bg-white shadow-sm"}`}>
+              <Clock className={`w-5 h-5 mx-auto mb-1 ${darkMode ? "text-indigo-400" : "text-indigo-600"}`} />
+              <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {language === 'zh' ? '时长' : 'Duration'}
               </div>
-              <div>
-                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  {language === 'zh' ? '时间' : 'Date & Time'}
+              <div className={`text-sm font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                2.5h
+              </div>
+            </div>
+            <div className={`p-3 rounded-xl text-center ${darkMode ? "bg-slate-800" : "bg-white shadow-sm"}`}>
+              <Users className={`w-5 h-5 mx-auto mb-1 ${darkMode ? "text-purple-400" : "text-purple-600"}`} />
+              <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {language === 'zh' ? '人数' : 'People'}
+              </div>
+              <div className={`text-sm font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                {activity.participants}/{activity.maxParticipants}
+              </div>
+            </div>
+            <div className={`p-3 rounded-xl text-center ${darkMode ? "bg-slate-800" : "bg-white shadow-sm"}`}>
+              <TrendingUp className={`w-5 h-5 mx-auto mb-1 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`} />
+              <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                {language === 'zh' ? '热度' : 'Hot'}
+              </div>
+              <div className={`text-sm font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                {Math.round((activity.participants / activity.maxParticipants) * 100)}%
+              </div>
+            </div>
+          </div>
+
+          {/* DateTime and Location */}
+          <div className={`rounded-2xl p-4 mb-4 ${darkMode ? "bg-slate-800" : "bg-white shadow-sm"}`}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className={`p-2 rounded-lg ${darkMode ? "bg-indigo-600/20" : "bg-indigo-100"}`}>
+                <Calendar className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div className="flex-1">
+                <div className={`text-sm font-semibold mb-1 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                  {activity.date}
                 </div>
-                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
-                  {activity.date} {activity.time}
+                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  {activity.time} - {activity.endTime}
                 </div>
               </div>
             </div>
-
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                darkMode ? "bg-emerald-600/20" : "bg-emerald-100"
-              }`}>
-                <Globe className="w-6 h-6 text-emerald-600" />
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg ${darkMode ? "bg-emerald-600/20" : "bg-emerald-100"}`}>
+                <Globe className="w-5 h-5 text-emerald-600" />
               </div>
-              <div>
-                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  {language === 'zh' ? '地点' : 'Location'}
-                </div>
-                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+              <div className="flex-1">
+                <div className={`text-sm font-semibold mb-1 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
                   {activity.location}
                 </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                darkMode ? "bg-purple-600/20" : "bg-purple-100"
-              }`}>
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  {language === 'zh' ? '参与人数' : 'Participants'}
-                </div>
-                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
-                  {activity.participants}/{activity.maxParticipants}
-                </div>
+                <button className={`text-xs ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
+                  {language === 'zh' ? '查看地图 >' : 'View Map >'}
+                </button>
               </div>
             </div>
           </div>
 
           {/* Organizer */}
-          <div className={`p-4 rounded-2xl mb-6 ${darkMode ? "bg-slate-800" : "bg-white"}`}>
+          <div className={`rounded-2xl p-4 mb-4 ${darkMode ? "bg-slate-800" : "bg-white shadow-sm"}`}>
             <div className="flex items-center gap-3">
               <img
                 src={activity.avatar}
                 alt={activity.organizer}
-                className="w-12 h-12 rounded-full object-cover"
+                className="w-14 h-14 rounded-full object-cover"
               />
               <div className="flex-1">
-                <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
+                <div className={`text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
                   {language === 'zh' ? '组织者' : 'Organizer'}
                 </div>
-                <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                <div className={`font-bold ${darkMode ? "text-slate-200" : "text-slate-900"}`}>
                   {activity.organizer}
                 </div>
+                <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                  {activity.organizerMajor}
+                </div>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => navigateTo('user-profile', { userId: activity.organizerId })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium ${
                   darkMode ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-700"
                 }`}
               >
                 {language === 'zh' ? '查看' : 'View'}
-              </button>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <h3 className={`text-lg font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
-              {language === 'zh' ? '活动介绍' : 'About'}
-            </h3>
-            <p className={`text-sm leading-relaxed ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-              {activity.description}
-            </p>
-          </div>
-
-          {/* Participants */}
-          <div className="mt-6">
-            <h3 className={`text-lg font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
-              {language === 'zh' ? '参与者' : 'Participants'}
-            </h3>
-            <div className="flex -space-x-2">
-              {activity.participantsList.map((p) => (
-                <img
-                  key={p.id}
-                  src={p.avatar}
-                  alt={p.username}
-                  className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                />
-              ))}
-              {activity.participants > 3 && (
-                <div className={`w-10 h-10 rounded-full border-2 border-white flex items-center justify-center text-xs font-semibold ${
-                  darkMode ? "bg-slate-700 text-slate-300" : "bg-slate-200 text-slate-600"
-                }`}>
-                  +{activity.participants - 3}
-                </div>
-              )}
+              </motion.button>
             </div>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className={`flex border-b ${darkMode ? "border-slate-700" : "border-slate-200"}`}>
+          {[
+            { id: 'about', label: language === 'zh' ? '详情' : 'About' },
+            { id: 'agenda', label: language === 'zh' ? '日程' : 'Agenda' },
+            { id: 'participants', label: language === 'zh' ? '参与者' : 'Participants' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? darkMode
+                    ? "text-indigo-400 border-b-2 border-indigo-400"
+                    : "text-indigo-600 border-b-2 border-indigo-600"
+                  : darkMode
+                  ? "text-slate-500"
+                  : "text-slate-500"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="px-6 py-4">
+          <AnimatePresence mode="wait">
+            {activeTab === 'about' && (
+              <motion.div
+                key="about"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <p className={`text-sm leading-relaxed mb-6 ${darkMode ? "text-slate-300" : "text-slate-700"}`}>
+                  {activity.description}
+                </p>
+                
+                {activity.requirements && (
+                  <div>
+                    <h4 className={`font-bold mb-3 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                      {language === 'zh' ? '参与要求' : 'Requirements'}
+                    </h4>
+                    <div className="space-y-2">
+                      {activity.requirements.map((req, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <CheckCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? "text-emerald-400" : "text-emerald-600"}`} />
+                          <span className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                            {req}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === 'agenda' && (
+              <motion.div
+                key="agenda"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-3"
+              >
+                {activity.agenda.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`flex gap-4 p-4 rounded-xl ${darkMode ? "bg-slate-800" : "bg-white shadow-sm"}`}
+                  >
+                    <div className={`flex items-center justify-center w-16 h-16 rounded-xl flex-shrink-0 ${
+                      darkMode ? "bg-indigo-600/20" : "bg-indigo-100"
+                    }`}>
+                      <div className={`text-center ${darkMode ? "text-indigo-400" : "text-indigo-600"}`}>
+                        <div className="text-lg font-bold">{item.time.split('-')[0].split(':')[0]}</div>
+                        <div className="text-xs">{item.time.split('-')[0].split(':')[1]}</div>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className={`text-xs mb-1 ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                        {item.time}
+                      </div>
+                      <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                        {item.title}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {activeTab === 'participants' && (
+              <motion.div
+                key="participants"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-3"
+              >
+                {activity.participantsList.map((p) => (
+                  <motion.div
+                    key={p.id}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => navigateTo('user-profile', { userId: p.id })}
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer ${
+                      darkMode ? "bg-slate-800 hover:bg-slate-750" : "bg-white shadow-sm hover:shadow"
+                    }`}
+                  >
+                    <img
+                      src={p.avatar}
+                      alt={p.username}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <div className={`font-semibold ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                        {p.username}
+                      </div>
+                      <div className={`text-xs ${darkMode ? "text-slate-500" : "text-slate-500"}`}>
+                        {p.major}
+                      </div>
+                    </div>
+                    <ChevronRight className={`w-5 h-5 ${darkMode ? "text-slate-600" : "text-slate-400"}`} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Join Button */}
-      <div className={`absolute bottom-0 left-0 right-0 p-4 border-t ${
-        darkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100"
+      {/* Fixed Bottom Button */}
+      <div className={`absolute bottom-0 left-0 right-0 p-4 border-t backdrop-blur-sm ${
+        darkMode ? "bg-slate-900/90 border-slate-700" : "bg-white/90 border-slate-100"
       }`}>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setIsJoined(!isJoined)}
-          className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all ${
+          className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2 ${
             isJoined
-              ? "bg-slate-500 text-white"
+              ? darkMode
+                ? "bg-slate-700 text-slate-300"
+                : "bg-slate-200 text-slate-700"
               : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
           }`}
         >
-          {isJoined 
-            ? (language === 'zh' ? '取消报名' : 'Cancel Registration')
-            : (language === 'zh' ? '立即报名' : 'Join Now')}
+          {isJoined ? (
+            <>
+              <CheckCircle className="w-5 h-5" />
+              <span>{language === 'zh' ? '已报名 · 点击取消' : 'Joined · Tap to Cancel'}</span>
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-5 h-5" />
+              <span>{language === 'zh' ? '立即参加' : 'Join Now'}</span>
+            </>
+          )}
         </motion.button>
       </div>
+
+      {/* Share Sheet */}
+      <AnimatePresence>
+        {showShareSheet && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/50 flex items-end z-50"
+            onClick={() => setShowShareSheet(false)}
+          >
+            <motion.div
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full rounded-t-3xl p-6 ${darkMode ? "bg-slate-800" : "bg-white"}`}
+            >
+              <div className={`text-lg font-bold mb-4 ${darkMode ? "text-slate-200" : "text-slate-800"}`}>
+                {language === 'zh' ? '分享活动' : 'Share Activity'}
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { icon: <MessageCircle />, label: language === 'zh' ? '好友' : 'Friends' },
+                  { icon: <Copy />, label: language === 'zh' ? '复制链接' : 'Copy Link' },
+                  { icon: <QrCode />, label: language === 'zh' ? '二维码' : 'QR Code' },
+                  { icon: <Share />, label: language === 'zh' ? '更多' : 'More' }
+                ].map((item, index) => (
+                  <button
+                    key={index}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-xl ${
+                      darkMode ? "hover:bg-slate-700" : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className={`p-3 rounded-full ${darkMode ? "bg-indigo-600" : "bg-indigo-100"}`}>
+                      {React.cloneElement(item.icon, { 
+                        className: `w-6 h-6 ${darkMode ? "text-white" : "text-indigo-600"}` 
+                      })}
+                    </div>
+                    <span className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
